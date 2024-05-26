@@ -1,0 +1,50 @@
+name: Github Pages Deploy
+# Controls when the workflow will run
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "src/**"
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Configure cache
+        uses: Swatinem/rust-cache@v2
+      - name: Setup pages
+        id: pages
+        uses: actions/configure-pages@v5
+      - name: Clean docs folder
+        run: cargo clean --doc
+      - name: Build Docs
+        run: RUSTDOCFLAGS="--html-in-header ./src/docs-header.html" cargo rustdoc --all-features
+      - name: Add redirect
+        run: |
+          echo "<meta http-equiv=refresh content=0;url=rust_fincalc/index.html>" > target/doc/index.html
+      - name: Remove lock file
+        run: rm target/doc/.lock
+      - name: Upload Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          name: github-pages
+          path: target/doc
+  deploy:
+    needs: build
+    permissions:
+      pages: write # to deploy to Pages
+      id-token: write # to verify the deployment originates from an appropriate source
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
