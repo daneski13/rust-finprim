@@ -8,19 +8,20 @@ Some functions and their args mimic those found in Excel and Google Sheets.
 
 ## Current Features
 
-* Time Value of Money (TVM) Calculations
-  * Present Value
-  * Future Value
-  * Net Present Value (NPV)
-  * Net Present Value with differing discount rates
-  * Net Present Value for irregular cash flows (XNPV)
-  * Payment (PMT)
-* Interest Rate calculations
-  * APR (Annual Percentage Rate) and EAR (Effective Annual Rate) conversions
-  * IRR (Internal Rate of Return)
-  * Internal Rate of Return for irregular cash flows (XIRR)
-  * MIRR (Modified Internal Rate of Return)
-* Tax and Amortization
-  * Amortization Schedule
-  * Progressive Income Tax
-* Derivatives of common financial functions for sensitivity analysis and optimization problems
+- Time Value of Money (TVM) Calculations
+  - Present Value
+  - Future Value
+  - Net Present Value (NPV)
+  - Net Present Value with differing discount rates
+  - Net Present Value for irregular cash flows (XNPV)
+  - Payment (PMT)
+- Interest Rate calculations
+  - APR (Annual Percentage Rate) and EAR (Effective Annual Rate) conversions
+  - IRR (Internal Rate of Return)
+  - Internal Rate of Return for irregular cash flows (XIRR)
+  - MIRR (Modified Internal Rate of Return)
+  - Modified Internal Rate of Return for irregular cash flows (XMIRR)
+- Tax and Amortization
+  - Amortization Schedule
+  - Progressive Income Tax
+- Derivatives of common financial functions for sensitivity analysis and optimization problems
