@@ -243,7 +243,7 @@ mod tests {
         let tax = progressive_tax(agi, deductions, &rate_table);
         assert_eq!(tax, Some(dec!(5_274.71)));
 
-        // Failing rate table
+        // Failing rate table (out of order brackets)
         let rate_table_bad = vec![
             (dec!(47_150), dec!(0.12)),
             (dec!(11_600), dec!(0.10)),

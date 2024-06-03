@@ -24,7 +24,7 @@ jobs:
       - name: Clean docs folder
         run: cargo clean --doc
       - name: Build Docs
-        run: RUSTDOCFLAGS="--html-in-header ./src/docs-header.html" cargo rustdoc --all-features
+        run: RUSTDOCFLAGS="--html-in-header ./docs-header.html" cargo rustdoc --all-features
       - name: Add redirect
         run: |
           echo "<meta http-equiv=refresh content=0;url=rust_fincalc/index.html>" > target/doc/index.html
