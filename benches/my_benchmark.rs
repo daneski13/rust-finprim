@@ -1,7 +1,7 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use rust_decimal::prelude::*;
 use rust_decimal_macros::dec;
-use rust_fincalc::amort_tax::AmortizationPeriod;
+use rust_fincalc::amort_dep_tax::AmortizationPeriod;
 use rust_fincalc::tvm::*;
 
 const ZERO: Decimal = Decimal::ZERO;

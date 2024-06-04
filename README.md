@@ -15,13 +15,18 @@ Some functions and their args mimic those found in Excel and Google Sheets.
   - Net Present Value with differing discount rates
   - Net Present Value for irregular cash flows (XNPV)
   - Payment (PMT)
-- Interest Rate calculations
+- Interest Rate Calculations
   - APR (Annual Percentage Rate) and EAR (Effective Annual Rate) conversions
   - IRR (Internal Rate of Return)
   - Internal Rate of Return for irregular cash flows (XIRR)
   - MIRR (Modified Internal Rate of Return)
   - Modified Internal Rate of Return for irregular cash flows (XMIRR)
-- Tax and Amortization
+- Amortization, Depreciation, and Tax Calculations
   - Amortization Schedule
+  - Depreciation Schedules for various methods
+    - Straight line
+    - Declining balance (e.g. double declining balance)
+    - Sum of years digits
   - Progressive Income Tax
-- Derivatives of common financial functions for sensitivity analysis and optimization problems
+- Derivatives of common financial functions for sensitivity analysis and
+  optimization problems
