@@ -27,6 +27,7 @@ Some functions and their args mimic those found in Excel and Google Sheets.
     - Straight line
     - Declining balance (e.g. double declining balance)
     - Sum of years digits
+    - MACRS (Modified Accelerated Cost Recovery System) for US tax purposes
   - Progressive Income Tax
 - Derivatives of common financial functions for sensitivity analysis and
   optimization problems

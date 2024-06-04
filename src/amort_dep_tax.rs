@@ -421,6 +421,51 @@ pub fn syd(
     periods
 }
 
+/// MACRS Deprectiation
+///
+/// Calculates the depreciation schedule for an asset using the Modified Accelerated Cost Recovery
+/// System (MACRS method). MACRS is a depreciation method allowed by the IRS for tax purposes.
+///
+/// # Arguments
+/// * `cost` - The initial cost of the asset
+/// * `rates` - A slice representing the MACRS depreciation rates for all periods of the asset's
+/// life, starting with the first year (period 1) and ending with the last year (period 2). Rates
+/// for each period can be found in IRS Publication 946 or other tax resources. The rates should
+/// be in decimal form (e.g., 0.20 for 20%).
+///
+/// # Returns
+/// * A vector of `DepreciationPeriod` instances representing each period in the depreciation schedule.
+/// The length of the vector will be equal to the number of rates provided.
+///
+/// # Examples
+/// * $10,000 asset, MACRS rates for 5 year life
+/// ```
+/// use rust_fincalc::amort_dep_tax::macrs;
+/// use rust_decimal_macros::*;
+/// use rust_decimal::Decimal;
+///
+/// let cost = dec!(10_000);
+/// let rates = vec![
+///    dec!(0.20),
+///    dec!(0.32),
+///    dec!(0.1920),
+///    dec!(0.1152),
+///    dec!(0.1152),
+///    dec!(0.0576)
+/// ];
+/// let schedule = macrs(cost, &rates);
+/// ```
+pub fn macrs(cost: Decimal, rates: &[Decimal]) -> Vec<DepreciationPeriod> {
+    let mut periods = Vec::with_capacity(rates.len());
+    let mut remain_bv = cost;
+    for (period, &rate) in rates.iter().enumerate() {
+        let dep_exp = cost * rate;
+        remain_bv -= dep_exp;
+        periods.insert(period, DepreciationPeriod::new(period as u32 + 1, dep_exp, remain_bv));
+    }
+    periods
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -441,6 +486,26 @@ mod tests {
         assert_eq!(dep_period, deserialized);
         let clone = dep_period.clone();
         assert_eq!(dep_period, clone);
+    }
+
+    #[test]
+    fn test_macrs() {
+        let cost = dec!(10_000);
+        let rates = vec![
+            dec!(0.20),
+            dec!(0.32),
+            dec!(0.1920),
+            dec!(0.1152),
+            dec!(0.1152),
+            dec!(0.0576),
+        ];
+        let schedule = macrs(cost, &rates);
+        schedule.iter().for_each(|period| println!("{:?}", period));
+        assert_eq!(schedule.len(), rates.len());
+        assert_eq!(schedule[0].depreciation_expense, dec!(2000));
+        assert_eq!(schedule[0].remaining_book_value, dec!(8000));
+        assert_eq!(schedule[5].depreciation_expense, dec!(576));
+        assert_eq!(schedule[5].remaining_book_value, dec!(0));
     }
 
     #[test]
