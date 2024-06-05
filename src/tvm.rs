@@ -36,7 +36,7 @@ use rust_decimal_macros::*;
 /// * 10 compounding periods
 /// * $100 payment per period
 /// ```
-/// use rust_fincalc::tvm::fv;
+/// use rust_finprim::tvm::fv;
 /// use rust_decimal_macros::*;
 ///
 /// let rate = dec!(0.05); let nper = dec!(10); let pmt = dec!(-100);
@@ -90,7 +90,7 @@ pub fn fv(rate: Decimal, nper: Decimal, pmt: Decimal, pv: Option<Decimal>, due: 
 /// * 10 compounding periods
 /// * $50 payment per period (5% of $1000)
 /// ```
-/// use rust_fincalc::tvm::pv;
+/// use rust_finprim::tvm::pv;
 /// use rust_decimal_macros::*;
 ///
 /// let rate = dec!(0.05); let nper = dec!(10); let pmt = dec!(-50); let fv = dec!(1000);
@@ -142,7 +142,7 @@ pub fn pv(rate: Decimal, nper: Decimal, pmt: Decimal, fv: Option<Decimal>, due: 
 /// * Cash flows of $-100, $50, $40, $30, $20
 /// ```
 /// use rust_decimal_macros::*;
-/// use rust_fincalc::tvm::npv;
+/// use rust_finprim::tvm::npv;
 ///
 /// let rate = dec!(0.05);
 /// let cash_flows = vec![dec!(-100), dec!(50), dec!(40), dec!(30), dec!(20)];
@@ -183,7 +183,7 @@ pub fn npv(rate: Decimal, cash_flows: &[Decimal]) -> Decimal {
 /// * Discount rates of 5%, 6%, 7%, 8%, 9%
 /// ```
 /// use rust_decimal_macros::*;
-/// use rust_fincalc::tvm::npv_differing_rates;
+/// use rust_finprim::tvm::npv_differing_rates;
 ///
 /// let flow_table = vec![
 ///     (dec!(-100), dec!(0.05)),
@@ -237,7 +237,7 @@ pub fn npv_differing_rates(flow_table: &[(Decimal, Decimal)]) -> Decimal {
 ///
 /// ```
 /// use rust_decimal_macros::*;
-/// use rust_fincalc::tvm::xnpv;
+/// use rust_finprim::tvm::xnpv;
 ///
 /// let rate = dec!(0.05);
 /// let flows_table = vec![
@@ -293,7 +293,7 @@ pub fn xnpv(rate: Decimal, flow_table: &[(Decimal, i32)]) -> Decimal {
 /// * $100 future value
 /// ```
 /// use rust_decimal_macros::*;
-/// use rust_fincalc::tvm::pmt;
+/// use rust_finprim::tvm::pmt;
 ///
 /// let rate = dec!(0.05); let nper = dec!(10); let pv = dec!(1000); let fv = dec!(100);
 /// pmt(rate, nper, pv, Some(fv), None);

@@ -28,7 +28,7 @@ use rust_decimal_macros::dec;
 /// # Example
 /// * EAR of 5% with 12 compounding periods per year
 /// ```
-/// use rust_fincalc::rate::apr;
+/// use rust_finprim::rate::apr;
 /// use rust_decimal_macros::*;
 /// let ear = dec!(0.05); let npery = dec!(12);
 /// apr(ear, npery);
@@ -64,7 +64,7 @@ pub fn apr(ear: Decimal, npery: Decimal) -> Decimal {
 /// # Example
 /// * APR of 5% with 12 compounding periods per year
 /// ```
-/// use rust_fincalc::rate::ear;
+/// use rust_finprim::rate::ear;
 /// use rust_decimal_macros::*;
 ///
 /// let apr = dec!(0.05); let npery = dec!(12);
@@ -103,7 +103,7 @@ pub fn ear(apr: Decimal, npery: Decimal) -> Decimal {
 /// # Example
 /// * Cash flows of $-100, $50, $40, $30, $20
 /// ```
-/// use rust_fincalc::rate::irr;
+/// use rust_finprim::rate::irr;
 /// use rust_decimal_macros::*;
 ///
 /// let cash_flows = vec![dec!(-100), dec!(50), dec!(40), dec!(30), dec!(20)];
@@ -174,7 +174,7 @@ pub fn irr(
 /// # Example
 /// * Cash flows of $-100, $50, $40, $30, $20
 /// ```
-/// use rust_fincalc::rate::xirr;
+/// use rust_finprim::rate::xirr;
 /// use rust_decimal_macros::*;
 ///
 /// let flow_table = vec![
@@ -234,7 +234,7 @@ pub fn xirr(
 /// # Example
 /// * Cash flows of $-100, $50, $40, $30, $20, finance rate of 0.1, reinvestment rate of 0.05
 /// ```
-/// use rust_fincalc::rate::mirr;
+/// use rust_finprim::rate::mirr;
 /// use rust_decimal_macros::*;
 ///
 /// let cash_flows = vec![dec!(-100), dec!(50), dec!(40), dec!(30), dec!(20)];
@@ -286,7 +286,7 @@ pub fn mirr(cash_flows: &[Decimal], finance_rate: Decimal, reinvest_rate: Decima
 /// # Example
 /// * Cash flows of $-100, $-20, $20, $20, $20, finance rate of 0.1, reinvestment rate of 0.05
 /// ```
-/// use rust_fincalc::rate::xmirr;
+/// use rust_finprim::rate::xmirr;
 /// use rust_decimal_macros::*;
 ///
 /// let flow_table = vec![
@@ -355,7 +355,7 @@ pub fn xmirr(flow_table: &[(Decimal, i32)], finance_rate: Decimal, reinvest_rate
 /// # Example
 /// * Beginning balance of $1000, ending balance of $2000 after 5 years
 /// ```
-/// use rust_fincalc::rate::cagr;
+/// use rust_finprim::rate::cagr;
 /// use rust_decimal_macros::*;
 ///
 /// let beginning_balance = dec!(1000);

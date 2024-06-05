@@ -44,7 +44,7 @@ impl AmortizationPeriod {
     /// # Examples
     ///
     /// ```
-    /// use rust_fincalc::amort_dep_tax::AmortizationPeriod;
+    /// use rust_finprim::amort_dep_tax::AmortizationPeriod;
     /// use rust_decimal_macros::*;
     ///
     /// let period = AmortizationPeriod::new(1, dec!(100), dec!(50), dec!(850));
@@ -83,9 +83,9 @@ impl AmortizationPeriod {
 /// # Examples
 /// * 5% rate, 30 year term (360 months), $1,000,000 loan, $4,000 monthly payment
 /// ```
-/// use rust_fincalc::amort_dep_tax::amort_schedule;
+/// use rust_finprim::amort_dep_tax::amort_schedule;
 /// use rust_decimal_macros::dec;
-/// use rust_fincalc::tvm::pmt;
+/// use rust_finprim::tvm::pmt;
 ///
 /// let rate = dec!(0.05) / dec!(12);
 /// let nper = 30 * 12;
@@ -156,7 +156,7 @@ pub fn amort_schedule(
 ///
 /// # Examples
 /// ```
-/// use rust_fincalc::amort_dep_tax::progressive_tax;
+/// use rust_finprim::amort_dep_tax::progressive_tax;
 /// use rust_decimal_macros::*;
 /// use rust_decimal::Decimal;
 ///
@@ -217,7 +217,7 @@ pub fn progressive_tax(agi: Decimal, deductions: Decimal, rate_table: &[(Decimal
 ///
 /// # Examples
 /// ```
-/// use rust_fincalc::amort_dep_tax::DepreciationPeriod;
+/// use rust_finprim::amort_dep_tax::DepreciationPeriod;
 /// use rust_decimal_macros::*;
 ///
 /// let period = DepreciationPeriod::new(1, dec!(100), dec!(900));
@@ -273,7 +273,7 @@ impl DepreciationPeriod {
 /// # Examples
 /// * $10,000 asset, $1,000 salvage value, 5 year life
 /// ```
-/// use rust_fincalc::amort_dep_tax::sln;
+/// use rust_finprim::amort_dep_tax::sln;
 /// use rust_decimal_macros::*;
 ///
 /// let cost = dec!(10_000);
@@ -318,7 +318,7 @@ pub fn sln(cost: Decimal, salvage: Decimal, life: u32) -> Vec<DepreciationPeriod
 /// # Examples
 /// * $10,000 asset, $1,000 salvage value, 5 year life
 /// ```
-/// use rust_fincalc::amort_dep_tax::db;
+/// use rust_finprim::amort_dep_tax::db;
 /// use rust_decimal_macros::*;
 ///
 /// let cost = dec!(10_000);
@@ -383,7 +383,7 @@ pub fn db(
 /// # Examples
 /// * $10,000 asset, $1,000 salvage value, 5 year life
 /// ```
-/// use rust_fincalc::amort_dep_tax::syd;
+/// use rust_finprim::amort_dep_tax::syd;
 /// use rust_decimal_macros::*;
 ///
 /// let cost = dec!(10_000);
@@ -440,7 +440,7 @@ pub fn syd(
 /// # Examples
 /// * $10,000 asset, MACRS rates for 5 year life
 /// ```
-/// use rust_fincalc::amort_dep_tax::macrs;
+/// use rust_finprim::amort_dep_tax::macrs;
 /// use rust_decimal_macros::*;
 /// use rust_decimal::Decimal;
 ///

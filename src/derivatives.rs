@@ -1,6 +1,5 @@
-//! This module contains functions for calculating derivatives of various financial functions.
-//!
-//! This may be useful for sensitivity analysis and optimization problems.
+//! This module contains the 1st and 2nd derivative of present value with respect to interest rate.
+//! Useful for sensitivity analysis and optimization problems.
 
 use crate::ONE;
 use rust_decimal::prelude::*;
