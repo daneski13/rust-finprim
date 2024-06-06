@@ -10,7 +10,7 @@ pub use dep::{db, macrs, sln, syd, DepreciationPeriod};
 
 // Tax
 mod tax;
-pub use tax::progressive_tax;
+pub use tax::{progressive_tax, progressive_tax_unchecked};
 
 #[cfg(feature = "serde")]
 #[cfg(test)]
