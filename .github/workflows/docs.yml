@@ -27,7 +27,7 @@ jobs:
         run: RUSTDOCFLAGS="--html-in-header ./docs-header.html" cargo rustdoc --all-features
       - name: Add redirect
         run: |
-          echo "<meta http-equiv=refresh content=0;url=rust_fincalc/index.html>" > target/doc/index.html
+          echo "<meta http-equiv=refresh content=0;url=rust_finprim/index.html>" > target/doc/index.html
       - name: Remove lock file
         run: rm target/doc/.lock
       - name: Upload Artifact
