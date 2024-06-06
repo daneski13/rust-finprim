@@ -137,7 +137,13 @@ pub fn xirr(
 
 #[cfg(test)]
 mod tests {
+    #[cfg(not(feature = "std"))]
+    extern crate std;
     use super::*;
+    #[cfg(not(feature = "std"))]
+    use std::prelude::v1::*;
+    #[cfg(not(feature = "std"))]
+    use std::{assert, vec};
 
     #[test]
     fn test_irr() {

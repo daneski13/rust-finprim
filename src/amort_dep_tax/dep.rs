@@ -1,56 +1,11 @@
+use crate::amort_dep_tax::DepreciationPeriod;
 use crate::ZERO;
 use rust_decimal::prelude::*;
 
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
-
-/// Represents a single period in an asset's depreciation schedule.
-///
-/// An asset depreciation period includes information about the period number,
-/// the depreciation expense for the period, and the remaining book value of the asset.
-/// The book value is the original cost of the asset minus the accumulated depreciation.
-///
-/// # Examples
-/// ```
-/// use rust_finprim::amort_dep_tax::DepreciationPeriod;
-/// use rust_decimal_macros::*;
-///
-/// let period = DepreciationPeriod::new(1, dec!(100), dec!(900));
-/// ```
-/// The above example creates a new `DepreciationPeriod` instance with a period number of 1,
-/// a depreciation expense of $100, and a remaining book value of $900.
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct DepreciationPeriod {
-    /// The period number of the depreciation schedule.
-    pub period: u32,
-
-    /// The depreciation expense for the period.
-    pub depreciation_expense: Decimal,
-
-    /// The remaining book value of the asset.
-    pub remaining_book_value: Decimal,
-}
-
-impl DepreciationPeriod {
-    /// Creates a new `DepreciationPeriod` instance.
-    ///
-    /// # Arguments
-    /// * `period`: The period number of the depreciation schedule.
-    /// * `depreciation_expense`: The depreciation expense for the period.
-    /// * `remaining_book_value`: The remaining book value of the asset.
-    ///
-    /// # Returns
-    ///
-    /// A new `DepreciationPeriod` instance initialized with the provided values.
-    pub fn new(period: u32, depreciation_expense: Decimal, remaining_book_value: Decimal) -> Self {
-        Self {
-            period,
-            depreciation_expense,
-            remaining_book_value,
-        }
-    }
-}
+#[cfg(not(feature = "std"))]
+extern crate alloc;
+#[cfg(not(feature = "std"))]
+use alloc::vec::Vec;
 
 /// Straight Line Depreciation - SLN
 ///
@@ -266,6 +221,12 @@ pub fn macrs(cost: Decimal, rates: &[Decimal]) -> Vec<DepreciationPeriod> {
 mod tests {
     use super::*;
     use rust_decimal_macros::dec;
+    #[cfg(not(feature = "std"))]
+    extern crate std;
+    #[cfg(not(feature = "std"))]
+    use std::prelude::v1::*;
+    #[cfg(not(feature = "std"))]
+    use std::{assert_eq, println, vec};
 
     #[test]
     fn test_macrs() {

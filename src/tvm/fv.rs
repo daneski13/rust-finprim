@@ -55,8 +55,14 @@ pub fn fv(rate: Decimal, nper: Decimal, pmt: Decimal, pv: Option<Decimal>, due: 
 
 #[cfg(test)]
 mod tests {
+    #[cfg(not(feature = "std"))]
+    extern crate std;
     use super::*;
     use rust_decimal_macros::*;
+    #[cfg(not(feature = "std"))]
+    use std::assert;
+    #[cfg(not(feature = "std"))]
+    use std::prelude::v1::*;
 
     #[test]
     fn test_fv() {

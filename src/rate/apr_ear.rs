@@ -76,8 +76,14 @@ pub fn ear(apr: Decimal, npery: Decimal) -> Decimal {
 
 #[cfg(test)]
 mod tests {
+    #[cfg(not(feature = "std"))]
+    extern crate std;
     use super::*;
     use rust_decimal_macros::dec;
+    #[cfg(not(feature = "std"))]
+    use std::assert;
+    #[cfg(not(feature = "std"))]
+    use std::prelude::v1::*;
 
     #[test]
     fn test_apr() {

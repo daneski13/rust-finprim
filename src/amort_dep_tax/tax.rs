@@ -124,8 +124,14 @@ pub unsafe fn progressive_tax_unchecked(
 
 #[cfg(test)]
 mod tests {
+    #[cfg(not(feature = "std"))]
+    extern crate std;
     use super::*;
     use rust_decimal_macros::dec;
+    #[cfg(not(feature = "std"))]
+    use std::prelude::v1::*;
+    #[cfg(not(feature = "std"))]
+    use std::{assert_eq, vec};
 
     #[test]
     fn test_progressive_tax() {

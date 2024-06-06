@@ -1,6 +1,6 @@
 [package]
 name = "rust_finprim"
-version = "0.2.1"
+version = "0.3.0"
 authors = ["Dane Skalski (daneski13)"]
 edition = "2021"
 description = "Various finance and accounting calculations/formulas implemented Rust"
@@ -8,8 +8,8 @@ readme = "./README.md"
 repository = "https://github.com/daneski13/rust-finprim"
 documentation = "https://daneski13.github.io/rust-finprim/rust_finprim/index.html"
 license = "MIT"
-keywords = ["finance", "math", "money", "excel", "economics"]
-categories = ["finance", "mathematics"]
+keywords = ["finance", "math", "accounting", "excel", "no_std"]
+categories = ["finance", "mathematics", "no-std"]
 rust-version = "1.78.0"
 
 [badges]
@@ -18,12 +18,13 @@ maintenance = { status = "passively-maintained" }
 [dependencies]
 rust_decimal = { version = "1.35.0", default-features = false, features = [
 	"maths",
-	"std",
 ] }
 rust_decimal_macros = "1.34.2"
-serde = { version = "1.0", features = ["derive"], optional = true }
+serde = { default-features = false, optional = true, version = "1.0" }
 
 [features]
+default = ["std"]
+std = ["rust_decimal/std", "serde?/std"]
 serde = ["dep:serde", "rust_decimal/serde"]
 
 [dev-dependencies]

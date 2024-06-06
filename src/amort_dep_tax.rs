@@ -1,12 +1,16 @@
 //! This module provides functions related to loan/mortgage amortization, depreciation, and tax calculations.
 
+// Structs
+mod structs;
+pub use structs::{AmortizationPeriod, DepreciationPeriod};
+
 // Amortization
 mod amort;
-pub use amort::{amort_schedule, AmortizationPeriod};
+pub use amort::amort_schedule;
 
 // Depreciation
 mod dep;
-pub use dep::{db, macrs, sln, syd, DepreciationPeriod};
+pub use dep::{db, macrs, sln, syd};
 
 // Tax
 mod tax;
@@ -15,8 +19,14 @@ pub use tax::{progressive_tax, progressive_tax_unchecked};
 #[cfg(feature = "serde")]
 #[cfg(test)]
 mod tests {
+    #[cfg(not(feature = "std"))]
+    extern crate std;
     use super::*;
     use rust_decimal_macros::*;
+    #[cfg(not(feature = "std"))]
+    use std::prelude::v1::*;
+    #[cfg(not(feature = "std"))]
+    use std::{assert, assert_eq, println, vec};
 
     #[test]
     fn test_serde() {

@@ -129,7 +129,13 @@ pub fn xmirr(flow_table: &[(Decimal, i32)], finance_rate: Decimal, reinvest_rate
 
 #[cfg(test)]
 mod tests {
+    #[cfg(not(feature = "std"))]
+    extern crate std;
     use super::*;
+    #[cfg(not(feature = "std"))]
+    use std::prelude::v1::*;
+    #[cfg(not(feature = "std"))]
+    use std::{assert, vec};
 
     #[test]
     fn test_mirr() {

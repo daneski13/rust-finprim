@@ -6,6 +6,14 @@ Built on top of the [`rust_decimal`](https://github.com/paupino/rust-decimal) cr
 
 Some functions and their args mimic those found in Excel and Google Sheets.
 
+- [Functionality](#functionality)
+  - [Time Value of Money (TVM) Calculations](#time-value-of-money-tvm-calculations)
+  - [Interest Rate Calculations](#interest-rate-calculations)
+  - [Amortization, Depreciation, and Tax Calculations](#amortization-depreciation-and-tax-calculations)
+  - [Derivatives](#derivatives)
+- [Features](#features)
+- [Installation](#installation)
+
 ## Functionality
 
 ### Time Value of Money (TVM) Calculations
@@ -54,30 +62,24 @@ Some functions and their args mimic those found in Excel and Google Sheets.
 - 1st and 2nd derivative of present value with respect to interest rate
   - Useful for calculating duration, convexity and various optimization problems
 
+## Features
+
+There are a few features that can be enabled:
+
+- `std` - Enabled by default. You can use the library in a `no_std` environment with `default-features = false` in your `Cargo.toml`.
+- `serde` - Enables serialization and deserialization of the provided structs using `serde`.
+
 ## Installation
 
 Add the following to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-rust_finprim = "0.2.1"
+rust_finprim = "0.3.0"
 ```
 
 Or
 
 ```sh
 cargo add rust_finprim
-```
-
-You can also enable the `serde` feature to serialize and deserialize any of the provided structs:
-
-```toml
-[dependencies]
-rust_finprim = { version = "0.2.1", features = ["serde"] }
-```
-
-Or
-
-```sh
-cargo add rust_finprim --features serde
 ```

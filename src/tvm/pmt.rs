@@ -69,8 +69,14 @@ pub fn pmt(rate: Decimal, nper: Decimal, pv: Decimal, fv: Option<Decimal>, due: 
 
 #[cfg(test)]
 mod tests {
+    #[cfg(not(feature = "std"))]
+    extern crate std;
     use super::*;
     use rust_decimal_macros::*;
+    #[cfg(not(feature = "std"))]
+    use std::assert;
+    #[cfg(not(feature = "std"))]
+    use std::prelude::v1::*;
 
     #[test]
     fn test_pmt() {

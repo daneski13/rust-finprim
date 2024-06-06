@@ -1,60 +1,11 @@
+use crate::amort_dep_tax::AmortizationPeriod;
 use crate::ZERO;
 use rust_decimal::prelude::*;
 
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
-
-/// Represents a single period in an amortization schedule.
-///
-/// An amortization period includes information about the payment period, the portion
-/// of the payment allocated to principal, the portion allocated to interest, and the
-/// remaining balance of the loan or mortgage.
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct AmortizationPeriod {
-    /// The period number of the amortization schedule.
-    pub period: u32,
-
-    /// The amount of the payment allocated to reduce the principal balance.
-    pub principal_payment: Decimal,
-
-    /// The amount of the payment allocated to pay interest charges.
-    pub interest_payment: Decimal,
-
-    /// The remaining balance of the loan or mortgage after the payment.
-    pub remaining_balance: Decimal,
-}
-
-impl AmortizationPeriod {
-    /// Creates a new `AmortizationPeriod` instance.
-    ///
-    /// # Arguments
-    /// * `period`: The period number of the amortization schedule.
-    /// * `principal_payment`: The amount allocated to reduce the principal balance.
-    /// * `interest_payment`: The amount allocated to pay interest charges.
-    /// * `remaining_balance`: The remaining balance of the loan or mortgage after the payment.
-    ///
-    /// # Returns
-    ///
-    /// A new `AmortizationPeriod` instance initialized with the provided values.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use rust_finprim::amort_dep_tax::AmortizationPeriod;
-    /// use rust_decimal_macros::*;
-    ///
-    /// let period = AmortizationPeriod::new(1, dec!(100), dec!(50), dec!(850));
-    /// ```
-    pub fn new(period: u32, principal_payment: Decimal, interest_payment: Decimal, remaining_balance: Decimal) -> Self {
-        Self {
-            period,
-            principal_payment,
-            interest_payment,
-            remaining_balance,
-        }
-    }
-}
+#[cfg(not(feature = "std"))]
+extern crate alloc;
+#[cfg(not(feature = "std"))]
+use alloc::vec::Vec;
 
 /// Calculates the amortization schedule for a loan or mortgage.
 ///
@@ -141,6 +92,12 @@ pub fn amort_schedule(
 mod tests {
     use super::*;
     use rust_decimal_macros::dec;
+    #[cfg(not(feature = "std"))]
+    extern crate std;
+    #[cfg(not(feature = "std"))]
+    use std::prelude::v1::*;
+    #[cfg(not(feature = "std"))]
+    use std::{assert_eq, println};
 
     #[test]
     fn test_amort_schedule() {

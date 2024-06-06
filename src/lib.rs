@@ -1,4 +1,5 @@
 #![doc = include_str!(concat!("../README.md"))]
+#![cfg_attr(not(feature = "std"), no_std)]
 
 pub mod amort_dep_tax;
 pub mod derivatives;
