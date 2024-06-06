@@ -29,7 +29,7 @@ Some functions and their args mimic those found in Excel and Google Sheets.
 
 - **APR (Annual Percentage Rate)** and **EAR (Effective Annual Rate)** conversions
 - **IRR (Internal Rate of Return)**
-  - Common Uses: Investment Analysis, Capital Budgeting, etc.
+  - Common Uses: Investment Analysis, Capital Budgeting, Bond Yields (YTM, YTC), etc.
 - **Internal Rate of Return for irregular cash flows (XIRR)**
 - **MIRR (Modified Internal Rate of Return)**
 - **Modified Internal Rate of Return for irregular cash flows (XMIRR)**
@@ -53,7 +53,7 @@ Some functions and their args mimic those found in Excel and Google Sheets.
 
 - 1st and 2nd derivative of present value with respect to interest rate
   - Useful for calculating duration, convexity and various optimization problems
-  
+
 ## Installation
 
 Add the following to your `Cargo.toml`:
@@ -76,9 +76,8 @@ You can also enable the `serde` feature to serialize and deserialize any of the 
 rust_finprim = { version = "0.1.0", features = ["serde"] }
 ```
 
-Or 
+Or
 
 ```sh
 cargo add rust_finprim --features serde
 ```
-
