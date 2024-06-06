@@ -30,6 +30,7 @@ pub fn pv_prime2_r(rate: Decimal, n: Decimal, cash_flow: Decimal) -> Decimal {
     cash_flow * n * (n + ONE) / (rate + ONE).powd(n + Decimal::TWO)
 }
 
+#[cfg(test)]
 mod tests {
     use super::*;
     use rust_decimal_macros::dec;
