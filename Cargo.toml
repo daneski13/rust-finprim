@@ -1,6 +1,6 @@
 [package]
 name = "rust_finprim"
-version = "0.3.0"
+version = "0.3.1"
 authors = ["Dane Skalski (daneski13)"]
 edition = "2021"
 description = "Various finance and accounting calculations/formulas implemented Rust"
@@ -20,11 +20,13 @@ rust_decimal = { version = "1.35.0", default-features = false, features = [
 	"maths",
 ] }
 rust_decimal_macros = "1.34.2"
-serde = { default-features = false, optional = true, version = "1.0" }
+serde = { default-features = false, features = [
+	"derive",
+], optional = true, version = "1.0" }
 
 [features]
 default = ["std"]
-std = ["rust_decimal/std", "serde?/std"]
+std = ["rust_decimal/std"]
 serde = ["dep:serde", "rust_decimal/serde"]
 
 [dev-dependencies]
