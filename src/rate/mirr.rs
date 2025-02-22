@@ -1,5 +1,6 @@
+use crate::rate::cagr;
 use crate::tvm::{fv, pv};
-use crate::{ONE, ZERO};
+use crate::ZERO;
 use rust_decimal::prelude::*;
 use rust_decimal_macros::*;
 
@@ -35,20 +36,24 @@ pub fn mirr(cash_flows: &[Decimal], finance_rate: Decimal, reinvest_rate: Decima
     // Num of compounding perids does not include the final period
     let n = cash_flows.len() - 1;
 
-    let (npv_neg, fv_pos) = cash_flows
-        .iter()
-        .enumerate()
-        .fold((ZERO, ZERO), |(npv_neg, fv_pos), (i, &cf)| {
-            if cf < ZERO {
-                (npv_neg + pv(finance_rate, i.into(), ZERO, Some(cf), None), fv_pos)
-            } else {
-                (
-                    npv_neg,
-                    fv_pos + fv(reinvest_rate, (n - i).into(), ZERO, Some(cf), None),
-                )
-            }
-        });
-    (fv_pos / -npv_neg).powd(ONE / Decimal::from_usize(n).unwrap()) - ONE
+    let mut npv_neg = ZERO;
+    let mut fv_pos = ZERO;
+    for (i, &cf) in cash_flows.iter().enumerate() {
+        if cf < ZERO {
+            // Calculate the present value of negative cash flows
+            npv_neg += pv(finance_rate, i.into(), ZERO, Some(cf), None);
+        } else {
+            // Calculate the future value of positive cash flows
+            fv_pos += fv(reinvest_rate, (n - i).into(), ZERO, Some(cf), None);
+        }
+    }
+    npv_neg.set_sign_positive(true);
+    cagr(
+        // Calculate the CAGR using the future value of positive cash flows and the present value of negative cash flows
+        npv_neg,
+        fv_pos,
+        Decimal::from_usize(n).unwrap(),
+    )
 }
 
 /// XMIRR - Modified Internal Rate of Return for Irregular Cash Flows
@@ -91,40 +96,38 @@ pub fn mirr(cash_flows: &[Decimal], finance_rate: Decimal, reinvest_rate: Decima
 pub fn xmirr(flow_table: &[(Decimal, i32)], finance_rate: Decimal, reinvest_rate: Decimal) -> Decimal {
     let init_date = flow_table.first().unwrap().1;
 
-    let mut flow_table = flow_table.to_vec();
-    for (_, date) in flow_table.iter_mut() {
-        *date -= init_date;
-    }
-
     let n = Decimal::from_i32(flow_table.last().unwrap().1).unwrap();
-    let (npv_neg, fv_pos) = flow_table.iter().fold((ZERO, ZERO), |(npv_neg, fv_pos), &(cf, date)| {
+    let mut npv_neg = ZERO;
+    let mut fv_pos = ZERO;
+    // Calculate the NPV of negative cash flows and the FV of positive cash Flows
+    for &(cf, date) in flow_table {
+        // For negative cash flows, calculate the present value
+        // For positive cash flows, calculate the future value
         if cf < ZERO {
-            (
-                npv_neg
-                    + pv(
-                        finance_rate,
-                        Decimal::from_i32(date).unwrap() / dec!(365),
-                        ZERO,
-                        Some(cf),
-                        None,
-                    ),
-                fv_pos,
-            )
+            npv_neg += pv(
+                finance_rate,
+                Decimal::from_i32(date - init_date).unwrap() / dec!(365),
+                ZERO,
+                Some(cf),
+                None,
+            );
         } else {
-            (
-                npv_neg,
-                fv_pos
-                    + fv(
-                        reinvest_rate,
-                        (n - Decimal::from_i32(date).unwrap()) / dec!(365),
-                        ZERO,
-                        Some(cf),
-                        None,
-                    ),
-            )
+            fv_pos += fv(
+                reinvest_rate,
+                (n - Decimal::from_i32(date).unwrap()) / dec!(365),
+                ZERO,
+                Some(cf),
+                None,
+            );
         }
-    });
-    (fv_pos / -npv_neg).powd(ONE / (n / dec!(365))) - ONE
+    }
+    npv_neg.set_sign_positive(true);
+    cagr(
+        // Calculate the CAGR using the future value of positive cash flows and the present value of negative cash flows
+        npv_neg,
+        fv_pos,
+        n / dec!(365), // Convert to years by dividing by 365
+    )
 }
 
 #[cfg(test)]

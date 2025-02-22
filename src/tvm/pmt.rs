@@ -49,29 +49,28 @@ pub fn pmt(rate: Decimal, nper: Decimal, pv: Decimal, fv: Option<Decimal>, due: 
     let fv: Decimal = fv.unwrap_or(ZERO);
     let due = due.unwrap_or(false);
 
-    // Flip the sign of the present value since it represents a cash outflow
-    // Flip the sign of the output as well to represent a cash outflow as a negative value
-    let mut _pv: Decimal;
     if rate == ZERO {
         // If the rate is zero, the nth_power should be 1 (since (1 + 0)^n = 1)
         // The payment calculation when rate is zero is simplified
-        -(pv + fv) / nper
-    } else {
-        let nth_power = (ONE + rate).powd(nper);
-
-        if due {
-            -(rate * (-pv * nth_power - fv)) / ((ONE - nth_power) * (ONE + rate))
-        } else {
-            -(rate * (-pv * nth_power - fv)) / (ONE - nth_power)
-        }
+        return -(pv + fv) / nper;
     }
+
+    let nth_power = (ONE + rate).powd(nper);
+    let numerator = rate * (-pv * nth_power - fv);
+    let denominator = if due {
+        (ONE - nth_power) * (ONE + rate)
+    } else {
+        ONE - nth_power
+    };
+
+    -numerator / denominator
 }
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     #[cfg(not(feature = "std"))]
     extern crate std;
-    use super::*;
     use rust_decimal_macros::*;
     #[cfg(not(feature = "std"))]
     use std::assert;
@@ -129,7 +128,7 @@ mod tests {
                 None,
                 None,
                 -129.50457,
-                "No future value, just a present value",
+                "Paying off a $1000 loan with a 5% interest rate",
             ),
             TestCase::new(
                 0.0,

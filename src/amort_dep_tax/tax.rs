@@ -50,12 +50,13 @@ pub fn progressive_tax(agi: Decimal, deductions: Decimal, rate_table: &[(Decimal
         return None;
     }
 
-    Some(unsafe { progressive_tax_unchecked(agi, deductions, rate_table) })
+    // The rate table has been validated
+    Some(progressive_tax_unchecked(agi, deductions, rate_table))
 }
 
-/// Progressive Income Tax - Unchecked
+/// Progressive Income Tax - Unchecked Version
 ///
-/// This is an unchecked (unsafe) version of the `progressive_tax` function that skips the rate table validation, may provide
+/// This is an unchecked version of the `progressive_tax` function that skips the rate table validation, may provide
 /// a performance boost in scenarios where the rate table is known to be valid.
 ///
 /// # Arguments
@@ -89,11 +90,7 @@ pub fn progressive_tax(agi: Decimal, deductions: Decimal, rate_table: &[(Decimal
 /// let deductions = dec!(12_000);
 /// let tax = progressive_tax(agi, deductions, &rate_table);
 /// ```
-pub unsafe fn progressive_tax_unchecked(
-    agi: Decimal,
-    deductions: Decimal,
-    rate_table: &[(Decimal, Decimal)],
-) -> Decimal {
+pub fn progressive_tax_unchecked(agi: Decimal, deductions: Decimal, rate_table: &[(Decimal, Decimal)]) -> Decimal {
     // If AGI is less than deductions, return zero (no tax owed)
     // This is a common scenario for students or individuals with low income
     if agi <= deductions {
@@ -103,22 +100,21 @@ pub unsafe fn progressive_tax_unchecked(
     // Taxable income is AGI minus deductions
     let taxable_income = agi - deductions;
 
-    // Calculate the tax owed based on the progressive rate table
-    // by iterating over each bracket and applying the rate to the
-    // portion of income within that bracket.
+    let mut prev_bracket = ZERO;
     let mut total_tax = ZERO;
-    for (i, &(bracket, rate)) in rate_table.iter().enumerate() {
-        let prev_bracket = if i == 0 { ZERO } else { rate_table[i - 1].0 };
-        // Break early if the previous bracket was greater than the taxable income
-        if prev_bracket > taxable_income {
+    for &(bracket, rate) in rate_table.iter() {
+        // if the taxable income is less than or equal to the previous bracket,
+        // break out of the loop - we're done
+        if taxable_income <= prev_bracket {
             break;
         }
-        total_tax += if taxable_income > bracket {
-            (bracket - prev_bracket) * rate
-        } else {
-            (taxable_income - prev_bracket) * rate
-        };
+
+        // Calculate the tax owed in the current bracket
+        let taxable_in_bracket = (taxable_income.min(bracket) - prev_bracket).max(ZERO);
+        total_tax += taxable_in_bracket * rate;
+        prev_bracket = bracket;
     }
+
     total_tax
 }
 

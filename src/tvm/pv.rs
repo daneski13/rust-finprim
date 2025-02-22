@@ -41,21 +41,21 @@ pub fn pv(rate: Decimal, nper: Decimal, pmt: Decimal, fv: Option<Decimal>, due: 
     let fv: Decimal = fv.unwrap_or(ZERO);
     let due = due.unwrap_or(false);
 
-    let mut pv: Decimal;
-    if rate == ZERO {
-        // If the rate is zero, the nth_power should be 1 (since (1 + 0)^n = 1)
-        // The present value calculation when rate is zero is simplified
-        pv = fv + (pmt * nper);
+    let mut pv = if rate == ZERO {
+        // Simplified formula when rate is zero
+        fv + (pmt * nper)
     } else {
         let nth_power = (ONE + rate).powd(-nper);
-        let fv = fv * nth_power;
+        let fv_discounted = fv * nth_power;
+        let factor = (ONE - nth_power) / rate;
 
         if due {
-            pv = pmt * (ONE - nth_power) / rate * (ONE + rate) + fv;
+            pmt * factor * (ONE + rate) + fv_discounted
         } else {
-            pv = pmt * (ONE - nth_power) / rate + fv;
+            pmt * factor + fv_discounted
         }
-    }
+    };
+
     // Present value negative since it represents a cash outflow
     pv.set_sign_negative(true);
     pv
@@ -100,7 +100,7 @@ pub fn npv(rate: Decimal, cash_flows: &[Decimal]) -> Decimal {
     cash_flows
         .iter()
         .enumerate()
-        .map(|(t, cf)| *cf / (ONE + rate).powi(t as i64))
+        .map(|(t, &cf)| cf / (ONE + rate).powi(t as i64))
         .sum()
 }
 
@@ -146,7 +146,7 @@ pub fn npv_differing_rates(flow_table: &[(Decimal, Decimal)]) -> Decimal {
     flow_table
         .iter()
         .enumerate()
-        .map(|(t, (cf, rate))| *cf / (ONE + *rate).powi(t as i64))
+        .map(|(t, &(cf, rate))| cf / (ONE + rate).powi(t as i64))
         .sum()
 }
 
@@ -192,16 +192,12 @@ pub fn npv_differing_rates(flow_table: &[(Decimal, Decimal)]) -> Decimal {
 pub fn xnpv(rate: Decimal, flow_table: &[(Decimal, i32)]) -> Decimal {
     // First date should be 0 (initial investment) and the rest should be difference from the initial date
     let init_date = flow_table.first().unwrap().1;
-    let mut flows_table = flow_table.to_vec();
-    for (_, date) in flows_table.iter_mut() {
-        *date -= init_date;
-    }
 
-    flows_table
+    flow_table
         .iter()
-        .map(|(cf, date)| {
-            let years = Decimal::from_i32(*date).unwrap() / dec!(365);
-            *cf / (ONE + rate).powd(years)
+        .map(|&(cf, date)| {
+            let years = Decimal::from_i32(date - init_date).unwrap() / dec!(365);
+            cf / (ONE + rate).powd(years)
         })
         .sum()
 }

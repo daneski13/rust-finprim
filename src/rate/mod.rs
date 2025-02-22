@@ -18,3 +18,11 @@ pub use mirr::{mirr, xmirr};
 // CAGR
 mod cagr;
 pub use cagr::cagr;
+
+// Percent Change
+mod pct_change;
+pub use pct_change::{apply_pct_change, pct_change};
+
+// TWR
+mod twr;
+pub use twr::twr;

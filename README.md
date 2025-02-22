@@ -8,7 +8,7 @@ Some functions and their args mimic those found in Excel and Google Sheets.
 
 - [Functionality](#functionality)
   - [Time Value of Money (TVM) Calculations](#time-value-of-money-tvm-calculations)
-  - [Interest Rate Calculations](#interest-rate-calculations)
+  - [Rate Calculations](#rate-calculations)
   - [Amortization, Depreciation, and Tax Calculations](#amortization-depreciation-and-tax-calculations)
   - [Derivatives](#derivatives)
 - [Features](#features)
@@ -31,7 +31,7 @@ Some functions and their args mimic those found in Excel and Google Sheets.
 - **Payment (PMT)**
   - Common Uses: Bonds, Loan/Mortgage Payments, Annuities, etc.
 
-### Interest Rate Calculations
+### Rate Calculations
 
 `rust_finprim::rate` module.
 
@@ -41,6 +41,9 @@ Some functions and their args mimic those found in Excel and Google Sheets.
 - **Internal Rate of Return for irregular cash flows (XIRR)**
 - **MIRR (Modified Internal Rate of Return)**
 - **Modified Internal Rate of Return for irregular cash flows (XMIRR)**
+- **Time Weighted Return**
+  - Common Uses: Performance Measurement, Portfolio Analysis, Due Diligence, etc.
+- **Percentage Change**
 
 ### Amortization, Depreciation, and Tax Calculations
 
@@ -62,6 +65,8 @@ Some functions and their args mimic those found in Excel and Google Sheets.
 - 1st and 2nd derivative of present value with respect to interest rate
   - Useful for calculating duration, convexity and various optimization problems
 
+- 1st and 2nd derivative of WACC (Weighted Average Cost of Capital) with respect to the debt/equity ratio
+
 ## Features
 
 There are a few features that can be enabled:
@@ -75,7 +80,7 @@ Add the following to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-rust_finprim = "0.3.1"
+rust_finprim = "0.4.0"
 ```
 
 Or

@@ -35,29 +35,30 @@ use rust_decimal::prelude::*;
 /// fv(rate, nper, pmt, None, None);
 /// ```
 pub fn fv(rate: Decimal, nper: Decimal, pmt: Decimal, pv: Option<Decimal>, due: Option<bool>) -> Decimal {
-    let pv: Decimal = pv.unwrap_or(ZERO);
+    let pv = pv.unwrap_or(ZERO);
     let due = due.unwrap_or(false);
 
     if rate == ZERO {
-        // If the rate is zero, the nth_power should be 1 (since (1 + 0)^n = 1)
-        // The future value calculation when rate is zero is simplified
-        pmt * nper + pv
-    } else {
-        let nth_power = (ONE + rate).powd(nper);
+        // Simplified formula when rate is zero
+        return pmt * nper + pv;
+    }
 
-        if due {
-            pmt * ((ONE - nth_power) / rate) * (ONE + rate) + (pv * nth_power)
-        } else {
-            (pmt * (ONE - nth_power) / rate) + (pv * nth_power)
-        }
+    let nth_power = (ONE + rate).powd(nper);
+    let factor = (ONE - nth_power) / rate;
+    let pv_grown = pv * nth_power;
+
+    if due {
+        pmt * factor * (ONE + rate) + pv_grown
+    } else {
+        pmt * factor + pv_grown
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     #[cfg(not(feature = "std"))]
     extern crate std;
-    use super::*;
     use rust_decimal_macros::*;
     #[cfg(not(feature = "std"))]
     use std::assert;

@@ -3,12 +3,14 @@ use rust_decimal::prelude::*;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
+/// Amorization Period
+///
 /// Represents a single period in an amortization schedule.
 ///
 /// An amortization period includes information about the payment period, the portion
 /// of the payment allocated to principal, the portion allocated to interest, and the
 /// remaining balance of the loan or mortgage.
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct AmortizationPeriod {
     /// The period number of the amortization schedule.
@@ -55,6 +57,8 @@ impl AmortizationPeriod {
     }
 }
 
+/// Depreciation Period
+///
 /// Represents a single period in an asset's depreciation schedule.
 ///
 /// An asset depreciation period includes information about the period number,
@@ -70,7 +74,7 @@ impl AmortizationPeriod {
 /// ```
 /// The above example creates a new `DepreciationPeriod` instance with a period number of 1,
 /// a depreciation expense of $100, and a remaining book value of $900.
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct DepreciationPeriod {
     /// The period number of the depreciation schedule.

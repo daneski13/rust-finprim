@@ -60,8 +60,12 @@ pub fn irr(
         let drate: Decimal = cash_flows
             .iter()
             .enumerate()
-            .map(|(i, cf)| pv_prime_r(rate, i.into(), *cf))
+            .map(|(i, &cf)| pv_prime_r(rate, i.into(), cf))
             .sum();
+        if drate.is_zero() {
+            // Avoid division by zero, return the current rate
+            return Err((rate, npv_value));
+        }
         rate -= npv_value / drate;
     }
     Err((rate, npv(rate, cash_flows)))
@@ -115,10 +119,6 @@ pub fn xirr(
     const MAX_ITER: u8 = 20;
     // First date should be 0 (initial investment) and the rest should be difference from the initial date
     let init_date = flow_table.first().unwrap().1;
-    let mut flow_table = flow_table.to_vec();
-    for (_, date) in flow_table.iter_mut() {
-        *date -= init_date;
-    }
 
     let mut rate = guess.unwrap_or(dec!(0.1));
     for _ in 0..MAX_ITER {
@@ -128,8 +128,12 @@ pub fn xirr(
         }
         let drate: Decimal = flow_table
             .iter()
-            .map(|(cf, date)| pv_prime_r(rate, Decimal::from_i32(*date).unwrap() / dec!(365), *cf))
+            .map(|&(cf, date)| pv_prime_r(rate, Decimal::from_i32(date - init_date).unwrap() / dec!(365), cf))
             .sum();
+        if drate.is_zero() {
+            // Avoid division by zero, return the current rate
+            return Err((rate, npv_value));
+        }
         rate -= npv_value / drate;
     }
     Err((rate, xnpv(rate, &flow_table)))

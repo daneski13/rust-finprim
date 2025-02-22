@@ -2,9 +2,11 @@ use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use rust_decimal::prelude::*;
 use rust_decimal_macros::dec;
 use rust_finprim::amort_dep_tax::AmortizationPeriod;
+use rust_finprim::rate::{mirr, xmirr};
 use rust_finprim::tvm::*;
 
 const ZERO: Decimal = Decimal::ZERO;
+const ONE: Decimal = Decimal::ONE;
 
 pub fn amort_schedule_basic(
     rate: Decimal,
@@ -24,8 +26,8 @@ pub fn amort_schedule_basic(
 
     let mut remaining_balance = pv;
     for period in 1..=nper {
-        let mut principal_payment = pmt - (remaining_balance * rate);
-        let mut interest_payment = pmt - principal_payment;
+        let mut interest_payment = remaining_balance * rate;
+        let mut principal_payment = pmt - interest_payment;
 
         if let Some((dp, rounding)) = round {
             principal_payment = principal_payment.round_dp_with_strategy(dp, rounding);
@@ -67,8 +69,8 @@ pub fn amort_schedule_iter(
 
     let mut periods = (1..=nper)
         .scan(pv, |remaining_balance, period| {
-            let mut principal_payment = pmt - (*remaining_balance * rate);
-            let mut interest_payment = pmt - principal_payment;
+            let mut interest_payment = *remaining_balance * rate;
+            let mut principal_payment = pmt - interest_payment;
 
             if let Some((dp, rounding)) = round {
                 principal_payment = principal_payment.round_dp_with_strategy(dp, rounding);
@@ -169,6 +171,65 @@ pub fn progressive_tax_fold(agi: Decimal, deductions: Decimal, rate_table: &[(De
     Some(tax)
 }
 
+pub fn mirr_old(cash_flows: &[Decimal], finance_rate: Decimal, reinvest_rate: Decimal) -> Decimal {
+    // Num of compounding perids does not include the final period
+    let n = cash_flows.len() - 1;
+
+    let (npv_neg, fv_pos) = cash_flows
+        .iter()
+        .enumerate()
+        .fold((ZERO, ZERO), |(npv_neg, fv_pos), (i, &cf)| {
+            if cf < ZERO {
+                (npv_neg + pv(finance_rate, i.into(), ZERO, Some(cf), None), fv_pos)
+            } else {
+                (
+                    npv_neg,
+                    fv_pos + fv(reinvest_rate, (n - i).into(), ZERO, Some(cf), None),
+                )
+            }
+        });
+    (fv_pos / -npv_neg).powd(ONE / Decimal::from_usize(n).unwrap()) - ONE
+}
+
+pub fn xmrr_old(flow_table: &[(Decimal, i32)], finance_rate: Decimal, reinvest_rate: Decimal) -> Decimal {
+    let init_date = flow_table.first().unwrap().1;
+
+    let mut flow_table = flow_table.to_vec();
+    for (_, date) in flow_table.iter_mut() {
+        *date -= init_date;
+    }
+
+    let n = Decimal::from_i32(flow_table.last().unwrap().1).unwrap();
+    let (npv_neg, fv_pos) = flow_table.iter().fold((ZERO, ZERO), |(npv_neg, fv_pos), &(cf, date)| {
+        if cf < ZERO {
+            (
+                npv_neg
+                    + pv(
+                        finance_rate,
+                        Decimal::from_i32(date).unwrap() / dec!(365),
+                        ZERO,
+                        Some(cf),
+                        None,
+                    ),
+                fv_pos,
+            )
+        } else {
+            (
+                npv_neg,
+                fv_pos
+                    + fv(
+                        reinvest_rate,
+                        (n - Decimal::from_i32(date).unwrap()) / dec!(365),
+                        ZERO,
+                        Some(cf),
+                        None,
+                    ),
+            )
+        }
+    });
+    (fv_pos / -npv_neg).powd(ONE / (n / dec!(365))) - ONE
+}
+
 fn criterion_benchmark(c: &mut Criterion) {
     let rate = black_box(Decimal::from_f64(0.05 / 12.0).unwrap());
     let nper: u32 = black_box(30 * 12);
@@ -202,6 +263,39 @@ fn criterion_benchmark(c: &mut Criterion) {
     group.bench_with_input("Progressive Tax Fold", &(agi, deductions, rate_table), |b, args| {
         b.iter(|| progressive_tax_fold(args.0, args.1, args.2))
     });
+    group.finish();
+
+    let mut group = c.benchmark_group("MIRR");
+    let cash_flows = black_box(vec![dec!(-100), dec!(50), dec!(40), dec!(30), dec!(20)]);
+    let finance_rate = black_box(dec!(0.1));
+    let reinvest_rate = black_box(dec!(0.05));
+    group.bench_with_input(
+        "MIRR Old",
+        &(cash_flows.as_slice(), finance_rate, reinvest_rate),
+        |b, args| b.iter(|| mirr_old(args.0, args.1, args.2)),
+    );
+    group.bench_with_input(
+        "MIRR",
+        &(cash_flows.as_slice(), finance_rate, reinvest_rate),
+        |b, args| b.iter(|| mirr(args.0, args.1, args.2)),
+    );
+    let cash_flows_xirr = black_box(vec![
+        (dec!(-100), 0),
+        (dec!(50), 359),
+        (dec!(40), 400),
+        (dec!(30), 1000),
+        (dec!(20), 2000),
+    ]);
+    group.bench_with_input(
+        "X MIRR Old",
+        &(cash_flows_xirr.as_slice(), finance_rate, reinvest_rate),
+        |b, args| b.iter(|| xmrr_old(args.0, args.1, args.2)),
+    );
+    group.bench_with_input(
+        "X MIRR",
+        &(cash_flows_xirr.as_slice(), finance_rate, reinvest_rate),
+        |b, args| b.iter(|| xmirr(args.0, args.1, args.2)),
+    );
     group.finish();
 }
 

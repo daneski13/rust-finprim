@@ -6,11 +6,15 @@ pub use structs::{AmortizationPeriod, DepreciationPeriod};
 
 // Amortization
 mod amort;
+#[cfg(feature = "std")]
 pub use amort::amort_schedule;
+pub use amort::amort_schedule_into;
 
 // Depreciation
 mod dep;
+#[cfg(feature = "std")]
 pub use dep::{db, macrs, sln, syd};
+pub use dep::{db_into, macrs_into, sln_into, syd_into};
 
 // Tax
 mod tax;
