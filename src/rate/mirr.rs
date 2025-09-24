@@ -1,8 +1,6 @@
 use crate::rate::cagr;
 use crate::tvm::{fv, pv};
-use crate::ZERO;
-use rust_decimal::prelude::*;
-use rust_decimal_macros::*;
+use crate::FloatLike;
 
 /// MIRR - Modified Internal Rate of Return
 ///
@@ -14,7 +12,7 @@ use rust_decimal_macros::*;
 /// any negative cash flows are financed at the cost of capital.
 ///
 /// # Arguments
-/// * `cash_flows` - A slice of Decimal values representing the cash flows of the investment
+/// * `cash_flows` - A slice of values representing the cash flows of the investment
 /// * `finance_rate` - The cost of capital (interest rate) for financing
 /// * `reinvest_rate` - The reinvestment rate for positive cash flows
 ///
@@ -25,34 +23,33 @@ use rust_decimal_macros::*;
 /// * Cash flows of $-100, $50, $40, $30, $20, finance rate of 0.1, reinvestment rate of 0.05
 /// ```
 /// use rust_finprim::rate::mirr;
-/// use rust_decimal_macros::*;
 ///
-/// let cash_flows = vec![dec!(-100), dec!(50), dec!(40), dec!(30), dec!(20)];
-/// let finance_rate = dec!(0.1);
-/// let reinvest_rate = dec!(0.05);
+/// let cash_flows = vec![-100.0, 50.0, 40.0, 30.0, 20.0];
+/// let finance_rate = 0.1;
+/// let reinvest_rate = 0.05;
 /// mirr(&cash_flows, finance_rate, reinvest_rate);
 /// ```
-pub fn mirr(cash_flows: &[Decimal], finance_rate: Decimal, reinvest_rate: Decimal) -> Decimal {
+pub fn mirr<T: FloatLike>(cash_flows: &[T], finance_rate: T, reinvest_rate: T) -> T {
     // Num of compounding perids does not include the final period
     let n = cash_flows.len() - 1;
 
-    let mut npv_neg = ZERO;
-    let mut fv_pos = ZERO;
+    let mut npv_neg = T::zero();
+    let mut fv_pos = T::zero();
     for (i, &cf) in cash_flows.iter().enumerate() {
-        if cf < ZERO {
+        if cf < T::zero() {
             // Calculate the present value of negative cash flows
-            npv_neg += pv(finance_rate, i.into(), ZERO, Some(cf), None);
+            npv_neg += pv(finance_rate, T::from_usize(i), T::zero(), Some(cf), None);
         } else {
             // Calculate the future value of positive cash flows
-            fv_pos += fv(reinvest_rate, (n - i).into(), ZERO, Some(cf), None);
+            fv_pos += fv(reinvest_rate, T::from_usize(n - i), T::zero(), Some(cf), None);
         }
     }
-    npv_neg.set_sign_positive(true);
+    npv_neg = npv_neg.abs(); // Ensure npv_neg is positive for the calculation
     cagr(
         // Calculate the CAGR using the future value of positive cash flows and the present value of negative cash flows
         npv_neg,
         fv_pos,
-        Decimal::from_usize(n).unwrap(),
+        T::from_usize(n),
     )
 }
 
@@ -81,74 +78,72 @@ pub fn mirr(cash_flows: &[Decimal], finance_rate: Decimal, reinvest_rate: Decima
 /// * Cash flows of $-100, $-20, $20, $20, $20, finance rate of 0.1, reinvestment rate of 0.05
 /// ```
 /// use rust_finprim::rate::xmirr;
-/// use rust_decimal_macros::*;
 ///
 /// let flow_table = vec![
-///   (dec!(-100), 0),
-///   (dec!(-20), 359),
-///   (dec!(20), 400),
-///   (dec!(20), 1000),
-///   (dec!(20), 2000),
+///   (-100.0, 0),
+///   (-20.0, 359),
+///   (20.0, 400),
+///   (20.0, 1000),
+///   (20.0, 2000),
 /// ];
-/// let finance_rate = dec!(0.1);
-/// let reinvest_rate = dec!(0.05);
+/// let finance_rate = 0.1;
+/// let reinvest_rate = 0.05;
 /// xmirr(&flow_table, finance_rate, reinvest_rate);
-pub fn xmirr(flow_table: &[(Decimal, i32)], finance_rate: Decimal, reinvest_rate: Decimal) -> Decimal {
+pub fn xmirr<T: FloatLike>(flow_table: &[(T, i32)], finance_rate: T, reinvest_rate: T) -> T {
     let init_date = flow_table.first().unwrap().1;
 
-    let n = Decimal::from_i32(flow_table.last().unwrap().1).unwrap();
-    let mut npv_neg = ZERO;
-    let mut fv_pos = ZERO;
+    let n = T::from_i32(flow_table.last().unwrap().1);
+    let mut npv_neg = T::zero();
+    let mut fv_pos = T::zero();
     // Calculate the NPV of negative cash flows and the FV of positive cash Flows
     for &(cf, date) in flow_table {
         // For negative cash flows, calculate the present value
         // For positive cash flows, calculate the future value
-        if cf < ZERO {
+        if cf < T::zero() {
             npv_neg += pv(
                 finance_rate,
-                Decimal::from_i32(date - init_date).unwrap() / dec!(365),
-                ZERO,
+                T::from_i32(date - init_date) / T::from_u16(365),
+                T::zero(),
                 Some(cf),
                 None,
             );
         } else {
             fv_pos += fv(
                 reinvest_rate,
-                (n - Decimal::from_i32(date).unwrap()) / dec!(365),
-                ZERO,
+                (n - T::from_i32(date)) / T::from_u16(365),
+                T::zero(),
                 Some(cf),
                 None,
             );
         }
     }
-    npv_neg.set_sign_positive(true);
+    npv_neg.abs(); // Ensure npv_neg is positive for the calculation
     cagr(
         // Calculate the CAGR using the future value of positive cash flows and the present value of negative cash flows
         npv_neg,
         fv_pos,
-        n / dec!(365), // Convert to years by dividing by 365
+        n / T::from_u16(365), // Convert to years by dividing by 365
     )
 }
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
     #[cfg(not(feature = "std"))]
     extern crate std;
-    use super::*;
-    #[cfg(not(feature = "std"))]
-    use std::prelude::v1::*;
     #[cfg(not(feature = "std"))]
     use std::{assert, vec};
 
     #[test]
     fn test_mirr() {
-        let cash_flows = vec![dec!(-100), dec!(-20), dec!(20), dec!(20), dec!(20)];
-        let finance_rate = dec!(0.1);
-        let reinvest_rate = dec!(0.05);
+        let cash_flows = vec![-100.0, -20.0, 20.0, 20.0, 20.0];
+        let finance_rate = 0.1;
+        let reinvest_rate = 0.05;
         let result = mirr(&cash_flows, finance_rate, reinvest_rate);
-        let expected = dec!(-0.14536);
+        let expected: f64 = -0.14536;
         assert!(
-            (result - expected).abs() < dec!(1e-5),
+            (result - expected).abs() < 1e-5,
             "Failed on case: {}. Expected: {}, Result: {}",
             "Cash flows of -100, -20, 20, 20, 20, finance rate of 0.1, reinvestment rate of 0.05",
             expected,
@@ -158,21 +153,15 @@ mod tests {
 
     #[test]
     fn test_xmirr() {
-        let finance_rate = dec!(0.1);
-        let reinvest_rate = dec!(0.05);
+        let finance_rate = 0.1;
+        let reinvest_rate = 0.05;
 
         // Simtle 1 year case
-        let flow_table = vec![
-            (dec!(-100), 0),
-            (dec!(-20), 365),
-            (dec!(20), 730),
-            (dec!(20), 1095),
-            (dec!(20), 1460),
-        ];
+        let flow_table = vec![(-100.0, 0), (-20.0, 365), (20.0, 730), (20.0, 1095), (20.0, 1460)];
         let result = xmirr(&flow_table, finance_rate, reinvest_rate);
-        let expected = dec!(-0.14536);
+        let expected: f64 = -0.14536;
         assert!(
-            (result - expected).abs() < dec!(1e-5),
+            (result - expected).abs() < 1e-5,
             "Failed on case: {}. Expected: {}, Result: {}",
             "Cash flows of -100, -20, 20, 20, 20, finance rate of 0.1, reinvestment rate of 0.05",
             expected,
@@ -180,17 +169,11 @@ mod tests {
         );
 
         // More complex case
-        let flow_table = vec![
-            (dec!(-100), 0),
-            (dec!(-20), 359),
-            (dec!(20), 400),
-            (dec!(20), 1000),
-            (dec!(20), 2000),
-        ];
+        let flow_table = vec![(-100.0, 0), (-20.0, 359), (20.0, 400), (20.0, 1000), (20.0, 2000)];
         let result = xmirr(&flow_table, finance_rate, reinvest_rate);
-        let expected = dec!(-0.09689);
+        let expected: f64 = -0.09689;
         assert!(
-            (result - expected).abs() < dec!(1e-5),
+            (result - expected).abs() < 1e-5,
             "Failed on case: {}. Expected: {}, Result: {}",
             "Cash flows of -100, -20, 20, 20, 20, at 0, 359, 400, 1000, 2000 days,
             finance rate of 0.1, reinvestment rate of 0.05",

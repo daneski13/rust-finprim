@@ -1,5 +1,4 @@
-use crate::ONE;
-use rust_decimal::prelude::*;
+use crate::FloatLike;
 
 /// APR - Annual (Nominal) Percentage Rate
 ///
@@ -21,8 +20,7 @@ use rust_decimal::prelude::*;
 /// * EAR of 5% with 12 compounding periods per year
 /// ```
 /// use rust_finprim::rate::apr;
-/// use rust_decimal_macros::*;
-/// let ear = dec!(0.05); let npery = dec!(12);
+/// let ear = 0.05; let npery = 12.0;
 /// apr(ear, npery);
 /// ```
 ///
@@ -32,9 +30,9 @@ use rust_decimal::prelude::*;
 /// Where:
 /// * \\(n\\) = number of compounding periods per year
 /// * \\(EAR\\) = effective annual Rate
-pub fn apr(ear: Decimal, npery: Decimal) -> Decimal {
-    let nth_root = (ONE + ear).powd(ONE / npery);
-    npery * (nth_root - ONE)
+pub fn apr<T: FloatLike>(ear: T, npery: T) -> T {
+    let nth_root = (T::one() + ear).powf(T::one() / npery);
+    npery * (nth_root - T::one())
 }
 
 /// EAR - Effective Annual Rate
@@ -57,9 +55,8 @@ pub fn apr(ear: Decimal, npery: Decimal) -> Decimal {
 /// * APR of 5% with 12 compounding periods per year
 /// ```
 /// use rust_finprim::rate::ear;
-/// use rust_decimal_macros::*;
 ///
-/// let apr = dec!(0.05); let npery = dec!(12);
+/// let apr = 0.05; let npery = 12.0;
 /// ear(apr, npery);
 /// ```
 ///
@@ -69,36 +66,34 @@ pub fn apr(ear: Decimal, npery: Decimal) -> Decimal {
 /// Where:
 /// * \\(APR\\) = annual percentage rate (nominal interest rate)
 /// * \\(n\\) = number of compounding periods per year
-pub fn ear(apr: Decimal, npery: Decimal) -> Decimal {
-    let nth_root = ONE + apr / npery;
-    nth_root.powd(npery) - ONE
+pub fn ear<T: FloatLike>(apr: T, npery: T) -> T {
+    let nth_root = T::one() + apr / npery;
+    nth_root.powf(npery) - T::one()
 }
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
     #[cfg(not(feature = "std"))]
     extern crate std;
-    use super::*;
-    use rust_decimal_macros::dec;
     #[cfg(not(feature = "std"))]
     use std::assert;
-    #[cfg(not(feature = "std"))]
-    use std::prelude::v1::*;
 
     #[test]
     fn test_apr() {
         struct TestCase {
-            n: Decimal,
-            ear: Decimal,
-            expected: Decimal,
+            n: f64,
+            ear: f64,
+            expected: f64,
             description: &'static str,
         }
         impl TestCase {
             fn new(n: f64, ear: f64, expected: f64, description: &'static str) -> TestCase {
                 TestCase {
-                    n: Decimal::from_f64(n).unwrap(),
-                    ear: Decimal::from_f64(ear).unwrap(),
-                    expected: Decimal::from_f64(expected).unwrap(),
+                    n,
+                    ear,
+                    expected,
                     description,
                 }
             }
@@ -118,7 +113,7 @@ mod tests {
         for case in &test_cases {
             let calculated_apr = apr(case.ear, case.n);
             assert!(
-                (calculated_apr - case.expected).abs() < dec!(1e-5),
+                (calculated_apr - case.expected).abs() < 1e-5,
                 "Failed on case: {}. Expected {}, got {}",
                 case.description,
                 case.expected,
@@ -130,17 +125,17 @@ mod tests {
     #[test]
     fn test_ear() {
         struct TestCase {
-            n: Decimal,
-            apr: Decimal,
-            expected: Decimal,
+            n: f64,
+            apr: f64,
+            expected: f64,
             description: &'static str,
         }
         impl TestCase {
             fn new(n: f64, apr: f64, expected: f64, description: &'static str) -> TestCase {
                 TestCase {
-                    n: Decimal::from_f64(n).unwrap(),
-                    apr: Decimal::from_f64(apr).unwrap(),
-                    expected: Decimal::from_f64(expected).unwrap(),
+                    n,
+                    apr,
+                    expected,
                     description,
                 }
             }
@@ -160,7 +155,7 @@ mod tests {
         for case in &test_cases {
             let calculated_ear = ear(case.apr, case.n);
             assert!(
-                (calculated_ear - case.expected).abs() < dec!(1e-5),
+                (calculated_ear - case.expected).abs() < 1e-5,
                 "Failed on case: {}. Expected {}, got {}",
                 case.description,
                 case.expected,

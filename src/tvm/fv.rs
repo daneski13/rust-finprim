@@ -1,5 +1,4 @@
-use crate::{ONE, ZERO};
-use rust_decimal::prelude::*;
+use crate::FloatLike;
 
 /// FV - Future Value
 ///
@@ -28,27 +27,27 @@ use rust_decimal::prelude::*;
 /// * 10 compounding periods
 /// * $100 payment per period
 /// ```
-/// use rust_finprim::tvm::fv;
-/// use rust_decimal_macros::*;
 ///
-/// let rate = dec!(0.05); let nper = dec!(10); let pmt = dec!(-100);
+/// use rust_finprim::tvm::fv;
+///
+/// let rate = 0.05; let nper = 10.0; let pmt = -100.0;
 /// fv(rate, nper, pmt, None, None);
 /// ```
-pub fn fv(rate: Decimal, nper: Decimal, pmt: Decimal, pv: Option<Decimal>, due: Option<bool>) -> Decimal {
-    let pv = pv.unwrap_or(ZERO);
+pub fn fv<T: FloatLike>(rate: T, nper: T, pmt: T, pv: Option<T>, due: Option<bool>) -> T {
+    let pv = pv.unwrap_or(T::zero());
     let due = due.unwrap_or(false);
 
-    if rate == ZERO {
+    if rate.is_zero() {
         // Simplified formula when rate is zero
         return pmt * nper + pv;
     }
 
-    let nth_power = (ONE + rate).powd(nper);
-    let factor = (ONE - nth_power) / rate;
+    let nth_power = (T::one() + rate).powf(nper);
+    let factor = (T::one() - nth_power) / rate;
     let pv_grown = pv * nth_power;
 
     if due {
-        pmt * factor * (ONE + rate) + pv_grown
+        pmt * factor * (T::one() + rate) + pv_grown
     } else {
         pmt * factor + pv_grown
     }
@@ -59,21 +58,18 @@ mod tests {
     use super::*;
     #[cfg(not(feature = "std"))]
     extern crate std;
-    use rust_decimal_macros::*;
     #[cfg(not(feature = "std"))]
     use std::assert;
-    #[cfg(not(feature = "std"))]
-    use std::prelude::v1::*;
 
     #[test]
     fn test_fv() {
         struct TestCase {
-            rate: Decimal,
-            nper: Decimal,
-            pmt: Decimal,
-            pv: Option<Decimal>,
+            rate: f64,
+            nper: f64,
+            pmt: f64,
+            pv: Option<f64>,
             due: Option<bool>,
-            expected: Decimal,
+            expected: f64,
             description: &'static str,
         }
         impl TestCase {
@@ -87,12 +83,12 @@ mod tests {
                 description: &'static str,
             ) -> TestCase {
                 TestCase {
-                    rate: Decimal::from_f64(rate).unwrap(),
-                    nper: Decimal::from_f64(nper).unwrap(),
-                    pmt: Decimal::from_f64(pmt).unwrap(),
-                    pv: pv.map(Decimal::from_f64).unwrap_or(None),
+                    rate,
+                    nper,
+                    pmt,
+                    pv,
                     due,
-                    expected: Decimal::from_f64(expected).unwrap(),
+                    expected,
                     description,
                 }
             }
@@ -132,7 +128,7 @@ mod tests {
         for case in &cases {
             let calculated_fv = fv(case.rate, case.nper, case.pmt, case.pv, case.due);
             assert!(
-                (calculated_fv - case.expected).abs() < dec!(1e-5),
+                (calculated_fv - case.expected).abs() < 1e-5,
                 "Failed on case: {}. Expected {}, got {}",
                 case.description,
                 case.expected,

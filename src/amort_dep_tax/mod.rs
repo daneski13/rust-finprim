@@ -23,27 +23,25 @@ pub use tax::{progressive_tax, progressive_tax_unchecked};
 #[cfg(feature = "serde")]
 #[cfg(test)]
 mod tests {
+    use super::*;
+
     #[cfg(not(feature = "std"))]
     extern crate std;
-    use super::*;
-    use rust_decimal_macros::*;
-    #[cfg(not(feature = "std"))]
-    use std::prelude::v1::*;
     #[cfg(not(feature = "std"))]
     use std::{assert, assert_eq, println, vec};
 
     #[test]
     fn test_serde() {
-        let period = AmortizationPeriod::new(1, dec!(100), dec!(50), dec!(850));
+        let period: AmortizationPeriod<f64> = AmortizationPeriod::new(1, 100.0, 50.0, 850.0);
         let serialized = serde_json::to_string(&period).unwrap();
-        let deserialized: AmortizationPeriod = serde_json::from_str(&serialized).unwrap();
+        let deserialized: AmortizationPeriod<f64> = serde_json::from_str(&serialized).unwrap();
         assert_eq!(period, deserialized);
         let clone = period.clone();
         assert_eq!(period, clone);
 
-        let dep_period = DepreciationPeriod::new(1, dec!(100), dec!(900));
+        let dep_period: DepreciationPeriod<f64> = DepreciationPeriod::new(1, 100.0, 900.0);
         let serialized = serde_json::to_string(&dep_period).unwrap();
-        let deserialized: DepreciationPeriod = serde_json::from_str(&serialized).unwrap();
+        let deserialized: DepreciationPeriod<f64> = serde_json::from_str(&serialized).unwrap();
         assert_eq!(dep_period, deserialized);
         let clone = dep_period.clone();
         assert_eq!(dep_period, clone);
