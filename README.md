@@ -1,12 +1,11 @@
-# Financial Calculation Primitives
+# Financial Calculation Primitives (FinPrim)
 
 This is a minimal library providing various primitive functions to perform financial calculations.
 
-Built on top of the [`rust_decimal`](https://github.com/paupino/rust-decimal) crate, providing high precision while maintaining respectable performance. The `Decimal` type provides a fixed-point decimal number of up to 28 significant digits. Offering much more precision than calculations using an `f64` and implementations in spreadsheet programs.
-
-Some functions and their args mimic those found in Excel and Google Sheets.
+Most functions with Excel and Google Sheets counterparts mimic their behavior and arguments.
 
 - [Functionality](#functionality)
+  - [Type Agnostic](#type-agnostic)
   - [Time Value of Money (TVM) Calculations](#time-value-of-money-tvm-calculations)
   - [Rate Calculations](#rate-calculations)
   - [Amortization, Depreciation, and Tax Calculations](#amortization-depreciation-and-tax-calculations)
@@ -15,6 +14,17 @@ Some functions and their args mimic those found in Excel and Google Sheets.
 - [Installation](#installation)
 
 ## Functionality
+
+### Type Agnostic
+
+This library is designed to be type-agnostic, allowing you to use any type that implements the `FloatLike` trait.
+
+Default implementations:
+- `f32`
+- `f64`
+- `Decimal` from [rust_decimal](https://github.com/paupino/rust-decimal) (via `rust_decimal` feature)
+
+You can implement the `FloatLike` trait for your own types or wrap any decimal-like / floating-point type providing crate for use with this library. Allowing you to choose a type that best fits your precision and performance requirements.
 
 ### Time Value of Money (TVM) Calculations
 
@@ -69,10 +79,9 @@ Some functions and their args mimic those found in Excel and Google Sheets.
 
 ## Features
 
-There are a few features that can be enabled:
-
-- `std` - Enabled by default. You can use the library in a `no_std` environment with `default-features = false` in your `Cargo.toml`.
+- `std` - Enabled by default. You can use the library in a `no_std` environment with `default-features = false` and enabling `no_std` feature (`no_std` depends on the `libm` crate for the core float types).
 - `serde` - Enables serialization and deserialization of the provided structs using `serde`.
+- `rust_decimal` - Enables support for the `Decimal` type from the [rust_decimal](https://github.com/paupino/rust-decimal) crate.
 
 ## Installation
 
@@ -80,11 +89,23 @@ Add the following to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-rust_finprim = "0.4.0"
+rust_finprim = "0.5.0"
 ```
 
 Or
 
 ```sh
 cargo add rust_finprim
+```
+
+Enable everything:
+
+```sh
+cargo add rust_finprim --features "serde rust_decimal"
+```
+
+Disable `std` and enable `no_std`:
+
+```sh
+cargo add rust_finprim --no-default-features --features "no_std"
 ```

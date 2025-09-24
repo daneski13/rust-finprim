@@ -1,5 +1,4 @@
-use crate::ONE;
-use rust_decimal::prelude::*;
+use crate::FloatLike;
 
 /// CAGR - Compound Annual Growth Rate
 ///
@@ -19,38 +18,35 @@ use rust_decimal::prelude::*;
 /// * Beginning balance of $1000, ending balance of $2000 after 5 years
 /// ```
 /// use rust_finprim::rate::cagr;
-/// use rust_decimal_macros::*;
 ///
-/// let beginning_balance = dec!(1000);
-/// let ending_balance = dec!(2000);
-/// let n = dec!(5);
+/// let beginning_balance = 1000.0;
+/// let ending_balance = 2000.0;
+/// let n = 5.0;
 ///
 /// cagr(beginning_balance, ending_balance, n);
 /// ```
-pub fn cagr(beginning_balance: Decimal, ending_balance: Decimal, n: Decimal) -> Decimal {
-    (ending_balance / beginning_balance).powd(ONE / n) - ONE
+pub fn cagr<T: FloatLike>(beginning_balance: T, ending_balance: T, n: T) -> T {
+    (ending_balance / beginning_balance).powf(T::one() / n) - T::one()
 }
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
     #[cfg(not(feature = "std"))]
     extern crate std;
-    use super::*;
-    use rust_decimal_macros::dec;
     #[cfg(not(feature = "std"))]
     use std::assert;
-    #[cfg(not(feature = "std"))]
-    use std::prelude::v1::*;
 
     #[test]
     fn test_cagr() {
-        let beginning_balance = dec!(1000);
-        let ending_balance = dec!(500);
-        let n = dec!(5);
+        let beginning_balance = 1000.0;
+        let ending_balance = 500.0;
+        let n = 5.0;
         let result = cagr(beginning_balance, ending_balance, n);
-        let expected = dec!(-0.12945);
+        let expected: f64 = -0.12945;
         assert!(
-            (result - expected).abs() < dec!(1e-5),
+            (result - expected).abs() < 1e-5,
             "Failed on case: {}. Expected: {}, Result: {}",
             "Beginning balance of $1000, ending balance of $500 after 5 years",
             expected,

@@ -1,5 +1,4 @@
-use rust_decimal::prelude::*;
-
+use crate::FloatLike;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
@@ -12,21 +11,21 @@ use serde::{Deserialize, Serialize};
 /// remaining balance of the loan or mortgage.
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct AmortizationPeriod {
+pub struct AmortizationPeriod<T> {
     /// The period number of the amortization schedule.
     pub period: u32,
 
     /// The amount of the payment allocated to reduce the principal balance.
-    pub principal_payment: Decimal,
+    pub principal_payment: T,
 
     /// The amount of the payment allocated to pay interest charges.
-    pub interest_payment: Decimal,
+    pub interest_payment: T,
 
     /// The remaining balance of the loan or mortgage after the payment.
-    pub remaining_balance: Decimal,
+    pub remaining_balance: T,
 }
 
-impl AmortizationPeriod {
+impl<T: FloatLike> AmortizationPeriod<T> {
     /// Creates a new `AmortizationPeriod` instance.
     ///
     /// # Arguments
@@ -43,16 +42,25 @@ impl AmortizationPeriod {
     ///
     /// ```
     /// use rust_finprim::amort_dep_tax::AmortizationPeriod;
-    /// use rust_decimal_macros::*;
     ///
-    /// let period = AmortizationPeriod::new(1, dec!(100), dec!(50), dec!(850));
+    /// let period = AmortizationPeriod::new(1, 100.0, 50.0, 850.0);
     /// ```
-    pub fn new(period: u32, principal_payment: Decimal, interest_payment: Decimal, remaining_balance: Decimal) -> Self {
+    pub fn new(period: u32, principal_payment: T, interest_payment: T, remaining_balance: T) -> Self {
         Self {
             period,
             principal_payment,
             interest_payment,
             remaining_balance,
+        }
+    }
+
+    /// Default implementation for `AmortizationPeriod`.
+    pub fn default() -> Self {
+        Self {
+            period: 0,
+            principal_payment: T::zero(),
+            interest_payment: T::zero(),
+            remaining_balance: T::zero(),
         }
     }
 }
@@ -68,26 +76,25 @@ impl AmortizationPeriod {
 /// # Examples
 /// ```
 /// use rust_finprim::amort_dep_tax::DepreciationPeriod;
-/// use rust_decimal_macros::*;
 ///
-/// let period = DepreciationPeriod::new(1, dec!(100), dec!(900));
+/// let period = DepreciationPeriod::new(1, 100.0, 900.0);
 /// ```
 /// The above example creates a new `DepreciationPeriod` instance with a period number of 1,
 /// a depreciation expense of $100, and a remaining book value of $900.
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct DepreciationPeriod {
+pub struct DepreciationPeriod<T> {
     /// The period number of the depreciation schedule.
     pub period: u32,
 
     /// The depreciation expense for the period.
-    pub depreciation_expense: Decimal,
+    pub depreciation_expense: T,
 
     /// The remaining book value of the asset.
-    pub remaining_book_value: Decimal,
+    pub remaining_book_value: T,
 }
 
-impl DepreciationPeriod {
+impl<T: FloatLike> DepreciationPeriod<T> {
     /// Creates a new `DepreciationPeriod` instance.
     ///
     /// # Arguments
@@ -98,11 +105,20 @@ impl DepreciationPeriod {
     /// # Returns
     ///
     /// A new `DepreciationPeriod` instance initialized with the provided values.
-    pub fn new(period: u32, depreciation_expense: Decimal, remaining_book_value: Decimal) -> Self {
+    pub fn new(period: u32, depreciation_expense: T, remaining_book_value: T) -> Self {
         Self {
             period,
             depreciation_expense,
             remaining_book_value,
+        }
+    }
+
+    /// Default implementation for `DepreciationPeriod`.
+    pub fn default() -> Self {
+        Self {
+            period: 0,
+            depreciation_expense: T::zero(),
+            remaining_book_value: T::zero(),
         }
     }
 }

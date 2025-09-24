@@ -1,5 +1,4 @@
-use crate::{ONE, ZERO};
-use rust_decimal::prelude::*;
+use crate::FloatLike;
 
 /// PMT - Payment
 ///
@@ -28,10 +27,9 @@ use rust_decimal::prelude::*;
 /// * $1000 present value
 /// * $100 future value
 /// ```
-/// use rust_decimal_macros::*;
 /// use rust_finprim::tvm::pmt;
 ///
-/// let rate = dec!(0.05); let nper = dec!(10); let pv = dec!(1000); let fv = dec!(100);
+/// let rate = 0.05; let nper = 10.0; let pv = 1000.0; let fv = 100.0;
 /// pmt(rate, nper, pv, Some(fv), None);
 /// ```
 ///
@@ -45,22 +43,22 @@ use rust_decimal::prelude::*;
 /// * \\(PV\\) = present value of a series of cash flows or principal amount
 /// * \\(FV\\) = future value
 /// * \\(n\\) = number of compounding periods
-pub fn pmt(rate: Decimal, nper: Decimal, pv: Decimal, fv: Option<Decimal>, due: Option<bool>) -> Decimal {
-    let fv: Decimal = fv.unwrap_or(ZERO);
+pub fn pmt<T: FloatLike>(rate: T, nper: T, pv: T, fv: Option<T>, due: Option<bool>) -> T {
+    let fv: T = fv.unwrap_or(T::zero());
     let due = due.unwrap_or(false);
 
-    if rate == ZERO {
+    if rate == T::zero() {
         // If the rate is zero, the nth_power should be 1 (since (1 + 0)^n = 1)
         // The payment calculation when rate is zero is simplified
         return -(pv + fv) / nper;
     }
 
-    let nth_power = (ONE + rate).powd(nper);
+    let nth_power = (T::one() + rate).powf(nper);
     let numerator = rate * (-pv * nth_power - fv);
     let denominator = if due {
-        (ONE - nth_power) * (ONE + rate)
+        (T::one() - nth_power) * (T::one() + rate)
     } else {
-        ONE - nth_power
+        T::one() - nth_power
     };
 
     -numerator / denominator
@@ -69,23 +67,21 @@ pub fn pmt(rate: Decimal, nper: Decimal, pv: Decimal, fv: Option<Decimal>, due: 
 #[cfg(test)]
 mod tests {
     use super::*;
+
     #[cfg(not(feature = "std"))]
     extern crate std;
-    use rust_decimal_macros::*;
     #[cfg(not(feature = "std"))]
     use std::assert;
-    #[cfg(not(feature = "std"))]
-    use std::prelude::v1::*;
 
     #[test]
     fn test_pmt() {
         struct TestCase {
-            rate: Decimal,
-            nper: Decimal,
-            pv: Decimal,
-            fv: Option<Decimal>,
+            rate: f64,
+            nper: f64,
+            pv: f64,
+            fv: Option<f64>,
             due: Option<bool>,
-            expected: Decimal,
+            expected: f64,
             description: &'static str,
         }
 
@@ -100,12 +96,12 @@ mod tests {
                 description: &'static str,
             ) -> TestCase {
                 TestCase {
-                    rate: Decimal::from_f64(rate).unwrap(),
-                    nper: Decimal::from_f64(nper).unwrap(),
-                    pv: Decimal::from_f64(pv).unwrap(),
-                    fv: fv.map(Decimal::from_f64).unwrap_or(None),
+                    rate,
+                    nper,
+                    pv,
+                    fv,
                     due,
-                    expected: Decimal::from_f64(expected).unwrap(),
+                    expected,
                     description,
                 }
             }
@@ -163,7 +159,7 @@ mod tests {
         for case in &cases {
             let calculated_pmt = pmt(case.rate, case.nper, case.pv, case.fv, case.due);
             assert!(
-                (calculated_pmt - case.expected).abs() < dec!(1e-5),
+                (calculated_pmt - case.expected).abs() < 1e-5,
                 "Failed on case: {}. Expected {}, got {}",
                 case.description,
                 case.expected,

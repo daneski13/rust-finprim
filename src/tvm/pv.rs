@@ -1,6 +1,4 @@
-use crate::{ONE, ZERO};
-use rust_decimal::prelude::*;
-use rust_decimal_macros::*;
+use crate::FloatLike;
 
 /// PV - Present Value
 ///
@@ -32,33 +30,30 @@ use rust_decimal_macros::*;
 /// * $50 payment per period (5% of $1000)
 /// ```
 /// use rust_finprim::tvm::pv;
-/// use rust_decimal_macros::*;
 ///
-/// let rate = dec!(0.05); let nper = dec!(10); let pmt = dec!(-50); let fv = dec!(1000);
+/// let rate = 0.05; let nper = 10.0; let pmt = -50.0; let fv = 1000.0;
 /// pv(rate, nper, pmt, Some(fv), None);
 /// ```
-pub fn pv(rate: Decimal, nper: Decimal, pmt: Decimal, fv: Option<Decimal>, due: Option<bool>) -> Decimal {
-    let fv: Decimal = fv.unwrap_or(ZERO);
+pub fn pv<T: FloatLike>(rate: T, nper: T, pmt: T, fv: Option<T>, due: Option<bool>) -> T {
+    let fv: T = fv.unwrap_or(T::zero());
     let due = due.unwrap_or(false);
 
-    let mut pv = if rate == ZERO {
+    let pv = if rate == T::zero() {
         // Simplified formula when rate is zero
         fv + (pmt * nper)
     } else {
-        let nth_power = (ONE + rate).powd(-nper);
-        let fv_discounted = fv * nth_power;
-        let factor = (ONE - nth_power) / rate;
+        let nth_power = (T::one() + rate).powf(nper);
+        let fv_discounted = fv / nth_power;
+        let factor = (T::one() - (T::one() / nth_power)) / rate;
 
         if due {
-            pmt * factor * (ONE + rate) + fv_discounted
+            pmt * factor * (T::one() + rate) + fv_discounted
         } else {
             pmt * factor + fv_discounted
         }
     };
 
-    // Present value negative since it represents a cash outflow
-    pv.set_sign_negative(true);
-    pv
+    -pv
 }
 
 /// NPV - Net Present Value
@@ -72,7 +67,7 @@ pub fn pv(rate: Decimal, nper: Decimal, pmt: Decimal, fv: Option<Decimal>, due: 
 ///
 /// # Arguments
 /// * `rate` - The discount rate per period
-/// * `cash_flows` - A slice of Decimal values representing the cash flows of the investment,
+/// * `cash_flows` - A slice of values representing the cash flows of the investment,
 /// note that the first cash flow is assumed to be at time value 0 (initial investment)
 ///
 /// # Returns
@@ -82,11 +77,10 @@ pub fn pv(rate: Decimal, nper: Decimal, pmt: Decimal, fv: Option<Decimal>, due: 
 /// * 5% discount rate
 /// * Cash flows of $-100, $50, $40, $30, $20
 /// ```
-/// use rust_decimal_macros::*;
 /// use rust_finprim::tvm::npv;
 ///
-/// let rate = dec!(0.05);
-/// let cash_flows = vec![dec!(-100), dec!(50), dec!(40), dec!(30), dec!(20)];
+/// let rate = 0.05;
+/// let cash_flows = vec![-100.0, 50.0, 40.0, 30.0, 20.0];
 /// npv(rate, &cash_flows);
 /// ```
 /// # Formula
@@ -96,12 +90,16 @@ pub fn pv(rate: Decimal, nper: Decimal, pmt: Decimal, fv: Option<Decimal>, due: 
 /// Where:
 /// * \\(CF_t\\) = cash flow at time \\(t\\)
 /// * \\(r\\) = discount rate
-pub fn npv(rate: Decimal, cash_flows: &[Decimal]) -> Decimal {
-    cash_flows
-        .iter()
-        .enumerate()
-        .map(|(t, &cf)| cf / (ONE + rate).powi(t as i64))
-        .sum()
+pub fn npv<T: FloatLike>(rate: T, cash_flows: &[T]) -> T {
+    // Accumulator for the power of (1 + rate)
+    // (1 + rate)^(t) so first iteration is (1 + rate)^0 = 1
+    let mut powf_acc = T::one();
+    let mut npv = T::zero();
+    for &cf in cash_flows.iter() {
+        npv += cf / (powf_acc);
+        powf_acc *= T::one() + rate;
+    }
+    npv
 }
 
 /// NPV Differing Rates - Net Present Value with differing discount rates
@@ -123,15 +121,14 @@ pub fn npv(rate: Decimal, cash_flows: &[Decimal]) -> Decimal {
 /// * Cash flows of $-100, $50, $40, $30, $20
 /// * Discount rates of 5%, 6%, 7%, 8%, 9%
 /// ```
-/// use rust_decimal_macros::*;
 /// use rust_finprim::tvm::npv_differing_rates;
 ///
 /// let flow_table = vec![
-///     (dec!(-100), dec!(0.05)),
-///     (dec!(50), dec!(0.06)),
-///     (dec!(40), dec!(0.07)),
-///     (dec!(30), dec!(0.08)),
-///     (dec!(20), dec!(0.09)),
+///     (-100.0, 0.05),
+///     (50.0, 0.06),
+///     (40.0, 0.07),
+///     (30.0, 0.08),
+///     (20.0, 0.09),
 /// ];
 /// npv_differing_rates(&flow_table);
 /// ```
@@ -142,11 +139,11 @@ pub fn npv(rate: Decimal, cash_flows: &[Decimal]) -> Decimal {
 /// Where:
 /// * \\(CF_t\\) = cash flow at time \\(t\\)
 /// * \\(r_t\\) = discount rate at time \\(t\\)
-pub fn npv_differing_rates(flow_table: &[(Decimal, Decimal)]) -> Decimal {
+pub fn npv_differing_rates<T: FloatLike>(flow_table: &[(T, T)]) -> T {
     flow_table
         .iter()
         .enumerate()
-        .map(|(t, &(cf, rate))| cf / (ONE + rate).powi(t as i64))
+        .map(|(t, &(cf, rate))| cf / (T::one() + rate).powf(T::from_usize(t)))
         .sum()
 }
 
@@ -177,56 +174,50 @@ pub fn npv_differing_rates(flow_table: &[(Decimal, Decimal)]) -> Decimal {
 /// * Dates of 0, 365, 420, 1360, 1460
 ///
 /// ```
-/// use rust_decimal_macros::*;
 /// use rust_finprim::tvm::xnpv;
 ///
-/// let rate = dec!(0.05);
+/// let rate = 0.05;
 /// let flows_table = vec![
-///    (dec!(-100), 0),
-///    (dec!(50), 365),
-///    (dec!(40), 420),
-///    (dec!(30), 1360),
-///    (dec!(20), 1460),
+///    (-100.0, 0),
+///    (50.0, 365),
+///    (40.0, 420),
+///    (30.0, 1360),
+///    (20.0, 1460),
 /// ];
 /// xnpv(rate, &flows_table);
-pub fn xnpv(rate: Decimal, flow_table: &[(Decimal, i32)]) -> Decimal {
+pub fn xnpv<T: FloatLike>(rate: T, flow_table: &[(T, i32)]) -> T {
     // First date should be 0 (initial investment) and the rest should be difference from the initial date
     let init_date = flow_table.first().unwrap().1;
 
+    let one_plus_r = T::one() + rate;
+    let yr_length: T = T::from_u16(365);
     flow_table
         .iter()
         .map(|&(cf, date)| {
-            let years = Decimal::from_i32(date - init_date).unwrap() / dec!(365);
-            cf / (ONE + rate).powd(years)
+            let years = T::from_i32(date - init_date) / yr_length;
+            cf / (one_plus_r).powf(years)
         })
         .sum()
 }
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
     #[cfg(not(feature = "std"))]
     extern crate std;
-    use super::*;
     #[cfg(not(feature = "std"))]
-    use std::prelude::v1::*;
-    #[cfg(not(feature = "std"))]
-    use std::{assert, vec};
+    use std::{assert, vec, vec::Vec};
 
     #[test]
     fn test_xnpv() {
-        let rate = dec!(0.05);
-        let flows_table = vec![
-            (dec!(-100), 0),
-            (dec!(50), 365),
-            (dec!(40), 730),
-            (dec!(30), 1095),
-            (dec!(20), 1460),
-        ];
+        let rate = 0.05;
+        let flows_table = vec![(-100.0, 0), (50.0, 365), (40.0, 730), (30.0, 1095), (20.0, 1460)];
 
         let result = xnpv(rate, &flows_table);
-        let expected = dec!(26.26940);
+        let expected: f64 = 26.26940;
         assert!(
-            (result - expected).abs() < dec!(1e-5),
+            (result - expected).abs() < 1e-5,
             "Failed on case: {}. Expected: {}, Result: {}",
             "5% discount rate, cash flows of -100, 50, 40, 30, 20",
             expected,
@@ -237,12 +228,12 @@ mod tests {
     #[test]
     fn test_pv() {
         struct TestCase {
-            rate: Decimal,
-            nper: Decimal,
-            pmt: Decimal,
-            fv: Option<Decimal>,
+            rate: f64,
+            nper: f64,
+            pmt: f64,
+            fv: Option<f64>,
             due: Option<bool>,
-            expected: Decimal,
+            expected: f64,
             description: &'static str,
         }
         impl TestCase {
@@ -256,12 +247,12 @@ mod tests {
                 description: &'static str,
             ) -> TestCase {
                 TestCase {
-                    rate: Decimal::from_f64(rate).unwrap(),
-                    nper: Decimal::from_f64(nper).unwrap(),
-                    pmt: Decimal::from_f64(pmt).unwrap(),
-                    fv: fv.map(Decimal::from_f64).unwrap_or(None),
+                    rate,
+                    nper,
+                    pmt,
+                    fv,
                     due,
-                    expected: Decimal::from_f64(expected).unwrap(),
+                    expected,
                     description,
                 }
             }
@@ -286,7 +277,7 @@ mod tests {
                 -810.78217,
                 "Payment at the beg of period should result in higher present value",
             ),
-            TestCase::new(0.0, 10.0, -100.0, None, None, -1000.0, "Zero interest rate no growth"),
+            TestCase::new(0.0, 10.0, -100.0, None, None, 1000.0, "Zero interest rate no growth"),
             TestCase::new(
                 0.05,
                 10.0,
@@ -310,7 +301,7 @@ mod tests {
         for case in &cases {
             let calculated_pv = pv(case.rate, case.nper, case.pmt, case.fv, case.due);
             assert!(
-                (calculated_pv - case.expected).abs() < dec!(1e-5),
+                (calculated_pv - case.expected).abs() < 1e-5,
                 "Failed on case: {}. Expected {}, got {}",
                 case.description,
                 case.expected,
@@ -322,17 +313,17 @@ mod tests {
     #[test]
     fn test_npv() {
         struct TestCase {
-            rate: Decimal,
-            cash_flows: Vec<Decimal>,
-            expected: Decimal,
+            rate: f64,
+            cash_flows: Vec<f64>,
+            expected: f64,
             description: &'static str,
         }
         impl TestCase {
             fn new(rate: f64, cash_flows: Vec<f64>, expected: f64, description: &'static str) -> TestCase {
                 TestCase {
-                    rate: Decimal::from_f64(rate).unwrap(),
-                    cash_flows: cash_flows.iter().map(|&cf| Decimal::from_f64(cf).unwrap()).collect(),
-                    expected: Decimal::from_f64(expected).unwrap(),
+                    rate,
+                    cash_flows,
+                    expected,
                     description,
                 }
             }
@@ -362,7 +353,7 @@ mod tests {
         for case in &cases {
             let calculated_npv = npv(case.rate, &case.cash_flows);
             assert!(
-                (calculated_npv - case.expected).abs() < dec!(1e-5),
+                (calculated_npv - case.expected).abs() < 1e-5,
                 "Failed on case: {}. Expected {}, got {}",
                 case.description,
                 case.expected,
@@ -374,18 +365,16 @@ mod tests {
     #[test]
     fn test_npv_differing_rates() {
         struct TestCase {
-            flow_table: Vec<(Decimal, Decimal)>,
-            expected: Decimal,
+            flow_table: Vec<(f64, f64)>,
+            expected: f64,
             description: &'static str,
         }
         impl TestCase {
             fn new(rates: Vec<f64>, cash_flows: Vec<f64>, expected: f64, description: &'static str) -> TestCase {
-                let rates: Vec<Decimal> = rates.iter().map(|&r| Decimal::from_f64(r).unwrap()).collect();
-                let cash_flows: Vec<Decimal> = cash_flows.iter().map(|&cf| Decimal::from_f64(cf).unwrap()).collect();
                 let flow_table = cash_flows.iter().zip(rates.iter()).map(|(&cf, &r)| (cf, r)).collect();
                 TestCase {
                     flow_table,
-                    expected: Decimal::from_f64(expected).unwrap(),
+                    expected,
                     description,
                 }
             }
@@ -415,7 +404,7 @@ mod tests {
         for case in &cases {
             let calculated_npv = npv_differing_rates(&case.flow_table);
             assert!(
-                (calculated_npv - case.expected).abs() < dec!(1e-5),
+                (calculated_npv - case.expected).abs() < 1e-5,
                 "Failed on case: {}. Expected {}, got {}",
                 case.description,
                 case.expected,

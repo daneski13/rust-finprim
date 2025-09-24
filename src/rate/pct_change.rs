@@ -1,4 +1,5 @@
-use rust_decimal::prelude::*;
+use crate::FinPrimError;
+use crate::FloatLike;
 
 /// Percentage Change
 ///
@@ -9,7 +10,7 @@ use rust_decimal::prelude::*;
 /// * `ending_value` - The final value or ending point
 ///
 /// # Returns
-/// * The percentage change as an `Option` containing a `Decimal` or `None` if there is a division by zero.
+/// * The percentage change as a `Result` containing a `FloatLike` or `DivideByZero` error.
 ///
 /// # Formula
 /// $$\\% \Delta = \frac{\mathrm{Ending\ Value} - \mathrm{Beginning\ Value}}{|\mathrm{Beginning\ Value}|}$$
@@ -19,21 +20,20 @@ use rust_decimal::prelude::*;
 ///
 /// ```
 /// use rust_finprim::rate::pct_change;
-/// use rust_decimal_macros::*;
 ///
-/// let beginning_value = dec!(1000);
-/// let ending_value = dec!(1500);
+/// let beginning_value = 1000.0;
+/// let ending_value = 1500.0;
 ///
 /// let result = pct_change(beginning_value, ending_value);
 /// ```
-pub fn pct_change(beginning_value: Decimal, ending_value: Decimal) -> Option<Decimal> {
+pub fn pct_change<T: FloatLike>(beginning_value: T, ending_value: T) -> Result<T, FinPrimError<T>> {
     if beginning_value.is_zero() {
         // Avoid division by zero
-        return None;
+        return Err(FinPrimError::DivideByZero);
     }
 
     // Calculate the percentage change
-    Some((ending_value - beginning_value) / beginning_value.abs()) // Use abs to ensure the division is correct for negative values
+    Ok((ending_value - beginning_value) / beginning_value.abs()) // Use abs to ensure the division is correct for negative values
 }
 
 /// Apply Percentage Change
@@ -67,30 +67,28 @@ pub fn pct_change(beginning_value: Decimal, ending_value: Decimal) -> Option<Dec
 /// * Value of $1000, percentage change of 50%
 /// ```
 /// use rust_finprim::rate::apply_pct_change;
-/// use rust_decimal_macros::*;
 ///
-/// let value = dec!(1000);
-/// let pct_change = dec!(0.5); // 50%
+/// let value = 1000.0;
+/// let pct_change = 0.5; // 50%
 ///
 /// let result = apply_pct_change(value, pct_change);
 /// ```
-pub fn apply_pct_change(value: Decimal, pct_change: Decimal) -> Decimal {
+pub fn apply_pct_change<T: FloatLike>(value: T, pct_change: T) -> T {
     pct_change * value.abs() + value
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rust_decimal_macros::dec;
 
     struct TestCase {
-        beginning_value: Decimal,
-        ending_value: Decimal,
-        pct_change: Decimal,
+        beginning_value: f64,
+        ending_value: f64,
+        pct_change: f64,
     }
 
     impl TestCase {
-        fn new(beginning_value: Decimal, ending_value: Decimal, pct_change: Decimal) -> Self {
+        fn new(beginning_value: f64, ending_value: f64, pct_change: f64) -> Self {
             TestCase {
                 beginning_value,
                 ending_value,
@@ -102,22 +100,22 @@ mod tests {
     #[test]
     fn test_pct_change_and_apply_pct_change() {
         let cases = [
-            TestCase::new(dec!(1000), dec!(1500), dec!(0.5)),   // 50% change
-            TestCase::new(dec!(1000), dec!(500), dec!(-0.5)),   // -50% change
-            TestCase::new(dec!(1000), dec!(1000), dec!(0)),     // 0% change
-            TestCase::new(dec!(1000), dec!(-1500), dec!(-2.5)), // -250% change
-            TestCase::new(dec!(-1000), dec!(1500), dec!(2.5)),  // 250% change
+            TestCase::new(1000.0, 1500.0, 0.5),   // 50% change
+            TestCase::new(1000.0, 500.0, -0.5),   // -50% change
+            TestCase::new(1000.0, 1000.0, 0.0),   // 0% change
+            TestCase::new(1000.0, -1500.0, -2.5), // -250% change
+            TestCase::new(-1000.0, 1500.0, 2.5),  // 250% change
         ];
         for case in &cases {
             let pct_change_result = pct_change(case.beginning_value, case.ending_value);
-            assert_eq!(pct_change_result, Some(case.pct_change));
+            assert_eq!(pct_change_result, Ok(case.pct_change));
 
             let apply_pct_change_result = apply_pct_change(case.beginning_value, case.pct_change);
             assert_eq!(apply_pct_change_result, case.ending_value);
         }
 
         // Test with zero beginning value
-        let result_zero = pct_change(dec!(0), dec!(1000)).unwrap_or(dec!(0));
-        assert_eq!(result_zero, dec!(0));
+        let result_zero = pct_change(0.0, 1000.0).unwrap_or(0.0);
+        assert_eq!(result_zero, 0.0);
     }
 }

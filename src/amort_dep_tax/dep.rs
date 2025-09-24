@@ -1,6 +1,6 @@
 use crate::amort_dep_tax::DepreciationPeriod;
-use crate::ZERO;
-use rust_decimal::prelude::*;
+use crate::FloatLike;
+use crate::RoundingMode;
 
 #[cfg(feature = "std")]
 /// Straight Line Depreciation (SLN)
@@ -24,25 +24,13 @@ use rust_decimal::prelude::*;
 /// * $10,000 asset, $1,000 salvage value, 5 year life
 /// ```
 /// use rust_finprim::amort_dep_tax::sln;
-/// use rust_decimal_macros::*;
 ///
-/// let cost = dec!(10_000);
-/// let salvage = dec!(1_000);
+/// let cost = 10_000.0;
+/// let salvage = 1_000.0;
 /// let life = 5;
 /// let schedule = sln(cost, salvage, life);
 /// ```
-pub fn sln(cost: Decimal, salvage: Decimal, life: u32) -> Vec<DepreciationPeriod> {
-    // let depreciation_expense = (cost - salvage) / Decimal::from_u32(life).unwrap();
-    //
-    // let mut periods = Vec::with_capacity(life as usize);
-    // let mut remaining_book_value = cost;
-    // for period in 1..=life {
-    //     remaining_book_value -= depreciation_expense;
-    //     periods.insert(
-    //         period as usize - 1,
-    //         DepreciationPeriod::new(period, depreciation_expense, remaining_book_value),
-    //     );
-    // }
+pub fn sln<T: FloatLike>(cost: T, salvage: T, life: u32) -> Vec<DepreciationPeriod<T>> {
     let mut periods = vec![DepreciationPeriod::default(); life as usize];
     sln_into(periods.as_mut_slice(), cost, salvage);
     periods
@@ -65,18 +53,17 @@ pub fn sln(cost: Decimal, salvage: Decimal, life: u32) -> Vec<DepreciationPeriod
 /// * $10,000 asset, $1,000 salvage value, 5 year life
 /// ```
 /// use rust_finprim::amort_dep_tax::{DepreciationPeriod, sln_into};
-/// use rust_decimal_macros::*;
 ///
 /// let life = 5;
-/// let cost = dec!(10_000);
-/// let salvage = dec!(1_000);
+/// let cost = 10_000.0;
+/// let salvage = 1_000.0;
 ///
 /// let mut schedule = vec![DepreciationPeriod::default(); life as usize];
 /// sln_into(&mut schedule, cost, salvage);
 /// ```
-pub fn sln_into(slice: &mut [DepreciationPeriod], cost: Decimal, salvage: Decimal) {
-    let life = slice.len() as u32;
-    let depreciation_expense = (cost - salvage) / Decimal::from_u32(life).unwrap();
+pub fn sln_into<T: FloatLike>(slice: &mut [DepreciationPeriod<T>], cost: T, salvage: T) {
+    let life = slice.len();
+    let depreciation_expense = (cost - salvage) / T::from_usize(life);
 
     let mut remaining_book_value = cost;
     for (period, item) in slice.iter_mut().enumerate() {
@@ -93,14 +80,17 @@ pub fn sln_into(slice: &mut [DepreciationPeriod], cost: Decimal, salvage: Decima
 /// Calculates the depreciation schedule for an asset using the declining balance method given a
 /// declining balance factor (e.g. double-declining balance).
 ///
+/// # Feature
+/// This function requires the `std` feature to be enabled as it uses the `std::Vec`. `sln_into`
+/// can be used in a `no_std` environment as any allocation is done by the caller.
+///
 /// # Arguments
 /// * `cost` - The initial cost of the assert
 /// * `salvage` - The estimated salvage value of the asset at the end of its useful life
 /// * `life` - The number of periods over which the asset will be depreciated
 /// * `factor` (optional) - The factor by which the straight-line depreciation rate is multiplied (default is 2 for double-declining balance)
-/// * `round` (optional) - A tuple specifying the number of decimal places and a rounding strategy for the amounts `(dp, RoundingStrategy)`,
+/// * `round` (optional) - A tuple specifying the number of decimal places and a rounding strategy for the amounts `(dp, RoundingMode)`,
 /// default is no rounding of calculations. The final depreciation expense is adjusted to ensure the remaining book value is equal to the salvage value.
-/// `rust_decimal::RoundingStrategy::MidpointNearestEven` ("Bankers Rounding") is likely what you are looking for as the rounding strategy.
 ///
 /// If rounding is enabled, the final period will be adjusted to "zero" out the remaining book
 /// value to the salvage value.
@@ -112,20 +102,19 @@ pub fn sln_into(slice: &mut [DepreciationPeriod], cost: Decimal, salvage: Decima
 /// * $10,000 asset, $1,000 salvage value, 5 year life
 /// ```
 /// use rust_finprim::amort_dep_tax::db;
-/// use rust_decimal_macros::*;
 ///
-/// let cost = dec!(10_000);
-/// let salvage = dec!(1_000);
+/// let cost = 10_000.0;
+/// let salvage = 1_000.0;
 /// let life = 5;
 /// let schedule = db(cost, salvage, life, None, None);
 /// ```
-pub fn db(
-    cost: Decimal,
-    salvage: Decimal,
+pub fn db<T: FloatLike>(
+    cost: T,
+    salvage: T,
     life: u32,
-    factor: Option<Decimal>,
-    round: Option<(u32, RoundingStrategy)>,
-) -> Vec<DepreciationPeriod> {
+    factor: Option<T>,
+    round: Option<(u32, RoundingMode, T)>,
+) -> Vec<DepreciationPeriod<T>> {
     let mut periods = vec![DepreciationPeriod::default(); life as usize];
     db_into(periods.as_mut_slice(), cost, salvage, factor, round);
     periods
@@ -144,9 +133,8 @@ pub fn db(
 /// * `cost` - The initial cost of the assert
 /// * `salvage` - The estimated salvage value of the asset at the end of its useful life
 /// * `factor` (optional) - The factor by which the straight-line depreciation rate is multiplied (default is 2 for double-declining balance)
-/// * `round` (optional) - A tuple specifying the number of decimal places and a rounding strategy for the amounts `(dp, RoundingStrategy)`,
+/// * `round` (optional) - A tuple specifying the number of decimal places and a rounding strategy for the amounts `(dp, RoundingMode)`,
 /// default is no rounding of calculations. The final depreciation expense is adjusted to ensure the remaining book value is equal to the salvage value.
-/// `rust_decimal::RoundingStrategy::MidpointNearestEven` ("Bankers Rounding") is likely what you are looking for as the rounding strategy.
 ///
 /// If rounding is enabled, the final period will be adjusted to "zero" out the remaining book
 /// value to the salvage value.
@@ -155,31 +143,30 @@ pub fn db(
 /// * $10,000 asset, $1,000 salvage value, 5 year life
 /// ```
 /// use rust_finprim::amort_dep_tax::{DepreciationPeriod, db_into};
-/// use rust_decimal_macros::*;
 ///
 /// let life = 5;
-/// let cost = dec!(10_000);
-/// let salvage = dec!(1_000);
+/// let cost = 10_000.0;
+/// let salvage = 1_000.0;
 ///
 /// let mut schedule = vec![DepreciationPeriod::default(); life as usize];
 /// db_into(&mut schedule, cost, salvage, None, None);
 /// ```
-pub fn db_into(
-    slice: &mut [DepreciationPeriod],
-    cost: Decimal,
-    salvage: Decimal,
-    factor: Option<Decimal>,
-    round: Option<(u32, RoundingStrategy)>,
+pub fn db_into<T: FloatLike>(
+    slice: &mut [DepreciationPeriod<T>],
+    cost: T,
+    salvage: T,
+    factor: Option<T>,
+    round: Option<(u32, RoundingMode, T)>,
 ) {
-    let factor = factor.unwrap_or(Decimal::TWO);
-    let life = slice.len() as u32;
+    let factor = factor.unwrap_or(T::two());
+    let life = slice.len();
 
     let mut remain_bv = cost;
-    let mut accum_dep = ZERO;
+    let mut accum_dep = T::zero();
     for (period, item) in slice.iter_mut().enumerate() {
-        let mut dep_exp = factor * (cost - accum_dep) / Decimal::from_u32(life).unwrap();
-        if let Some((dp, rounding)) = round {
-            dep_exp = dep_exp.round_dp_with_strategy(dp, rounding);
+        let mut dep_exp = factor * (cost - accum_dep) / T::from_usize(life);
+        if let Some((dp, rounding, epsilon)) = round {
+            dep_exp = dep_exp.round_with_mode(dp, rounding, epsilon);
         }
 
         if dep_exp > remain_bv - salvage {
@@ -203,21 +190,20 @@ pub fn db_into(
 #[cfg(feature = "std")]
 /// Sum of the Years Digits (SYD)
 ///
-/// # Feature
-/// This function requires the `std` feature to be enabled as it uses the `std::Vec`. `syd_into`
-/// can be used in a `no_std` environment as any allocation is done by the caller.
-///
 /// Calculates the depreciation schedule for an asset using the sum of the years' digits method.
 /// The sum of the years' digits method is an accelerated depreciation method that allocates
 /// more depreciation expense to the early years of an asset's life.
+///
+/// # Feature
+/// This function requires the `std` feature to be enabled as it uses the `std::Vec`. `syd_into`
+/// can be used in a `no_std` environment as any allocation is done by the caller.
 ///
 /// # Arguments
 /// * `cost` - The initial cost of the asset
 /// * `salvage` - The estimated salvage value of the asset at the end of its useful life
 /// * `life` - The number of periods over which the asset will be depreciated
-/// * `round` (optional) - A tuple specifying the number of decimal places and a rounding strategy for the amounts `(dp, RoundingStrategy)`,
+/// * `round` (optional) - A tuple specifying the number of decimal places and a rounding strategy for the amounts `(dp, RoundingMode)`,
 /// default is no rounding of calculations. The final depreciation expense is adjusted to ensure the remaining book value is equal to the salvage value.
-/// `rust_decimal::RoundingStrategy::MidpointNearestEven` ("Bankers Rounding") is likely what you are looking for as the rounding strategy.
 ///
 /// If rounding is enabled, the final period will be adjusted to "zero" out the remaining book value to the salvage value.
 ///
@@ -228,19 +214,18 @@ pub fn db_into(
 /// * $10,000 asset, $1,000 salvage value, 5 year life
 /// ```
 /// use rust_finprim::amort_dep_tax::syd;
-/// use rust_decimal_macros::*;
 ///
-/// let cost = dec!(10_000);
-/// let salvage = dec!(1_000);
+/// let cost = 10_000.0;
+/// let salvage = 1_000.0;
 /// let life = 5;
 /// let schedule = syd(cost, salvage, life, None);
 /// ```
-pub fn syd(
-    cost: Decimal,
-    salvage: Decimal,
+pub fn syd<T: FloatLike>(
+    cost: T,
+    salvage: T,
     life: u32,
-    round: Option<(u32, RoundingStrategy)>,
-) -> Vec<DepreciationPeriod> {
+    round: Option<(u32, RoundingMode, T)>,
+) -> Vec<DepreciationPeriod<T>> {
     let mut periods = vec![DepreciationPeriod::default(); life as usize];
     syd_into(periods.as_mut_slice(), cost, salvage, round);
     periods
@@ -260,9 +245,8 @@ pub fn syd(
 /// be unexpected behavior.
 /// * `salvage` - The estimated salvage value of the asset at the end of its useful life
 /// * `life` - The number of periods over which the asset will be depreciated
-/// * `round` (optional) - A tuple specifying the number of decimal places and a rounding strategy for the amounts `(dp, RoundingStrategy)`,
+/// * `round` (optional) - A tuple specifying the number of decimal places and a rounding strategy for the amounts `(dp, RoundingMode)`,
 /// default is no rounding of calculations. The final depreciation expense is adjusted to ensure the remaining book value is equal to the salvage value.
-/// `rust_decimal::RoundingStrategy::MidpointNearestEven` ("Bankers Rounding") is likely what you are looking for as the rounding strategy.
 ///
 /// If rounding is enabled, the final period will be adjusted to "zero" out the remaining book value to the salvage value.
 ///
@@ -273,29 +257,28 @@ pub fn syd(
 /// * $10,000 asset, $1,000 salvage value, 5 year life
 /// ```
 /// use rust_finprim::amort_dep_tax::{DepreciationPeriod, syd_into};
-/// use rust_decimal_macros::*;
 ///
 /// let life = 5;
-/// let cost = dec!(10_000);
-/// let salvage = dec!(1_000);
+/// let cost = 10_000.0;
+/// let salvage = 1_000.0;
 ///
 /// let mut schedule = vec![DepreciationPeriod::default(); life as usize];
 /// syd_into(&mut schedule, cost, salvage, None);
 /// ```
-pub fn syd_into(
-    slice: &mut [DepreciationPeriod],
-    cost: Decimal,
-    salvage: Decimal,
-    round: Option<(u32, RoundingStrategy)>,
+pub fn syd_into<T: FloatLike>(
+    slice: &mut [DepreciationPeriod<T>],
+    cost: T,
+    salvage: T,
+    round: Option<(u32, RoundingMode, T)>,
 ) {
-    let life = slice.len() as u32;
+    let life = slice.len();
     let mut remain_bv = cost;
-    let mut accum_dep = ZERO;
-    let sum_of_years = Decimal::from_u32(life * (life + 1)).unwrap() / Decimal::TWO;
+    let mut accum_dep = T::zero();
+    let sum_of_years = T::from_usize(life * (life + 1)) / T::two();
     for (period, item) in slice.iter_mut().enumerate() {
-        let mut dep_exp = (cost - salvage) * Decimal::from_u32(life - (period as u32)).unwrap() / sum_of_years;
-        if let Some((dp, rounding)) = round {
-            dep_exp = dep_exp.round_dp_with_strategy(dp, rounding)
+        let mut dep_exp = (cost - salvage) * T::from_usize(life - (period)) / sum_of_years;
+        if let Some((dp, rounding, epsilon)) = round {
+            dep_exp = dep_exp.round_with_mode(dp, rounding, epsilon)
         };
 
         accum_dep += dep_exp;
@@ -319,6 +302,10 @@ pub fn syd_into(
 /// Calculates the depreciation schedule for an asset using the Modified Accelerated Cost Recovery
 /// System (MACRS method). MACRS is a depreciation method allowed by the IRS for tax purposes.
 ///
+/// # Feature
+/// This function requires the `std` feature to be enabled as it uses the `std::Vec`. `sln_into`
+/// can be used in a `no_std` environment as any allocation is done by the caller.
+///
 /// # Arguments
 /// * `cost` - The initial cost of the asset
 /// * `rates` - A slice representing the MACRS depreciation rates for all periods of the asset's
@@ -334,21 +321,19 @@ pub fn syd_into(
 /// * $10,000 asset, MACRS rates for 5 year life
 /// ```
 /// use rust_finprim::amort_dep_tax::macrs;
-/// use rust_decimal_macros::*;
-/// use rust_decimal::Decimal;
 ///
-/// let cost = dec!(10_000);
+/// let cost = 10_000.0;
 /// let rates = vec![
-///    dec!(0.20),
-///    dec!(0.32),
-///    dec!(0.1920),
-///    dec!(0.1152),
-///    dec!(0.1152),
-///    dec!(0.0576)
+///    0.20,
+///    0.32,
+///    0.1920,
+///    0.1152,
+///    0.1152,
+///    0.0576
 /// ];
 /// let schedule = macrs(cost, &rates);
 /// ```
-pub fn macrs(cost: Decimal, rates: &[Decimal]) -> Vec<DepreciationPeriod> {
+pub fn macrs<T: FloatLike>(cost: T, rates: &[T]) -> Vec<DepreciationPeriod<T>> {
     let mut periods = vec![DepreciationPeriod::default(); rates.len()];
     macrs_into(periods.as_mut_slice(), cost, rates);
     periods
@@ -380,23 +365,21 @@ pub fn macrs(cost: Decimal, rates: &[Decimal]) -> Vec<DepreciationPeriod> {
 /// * $10,000 asset, MACRS rates for 5 year life
 /// ```
 /// use rust_finprim::amort_dep_tax::{DepreciationPeriod, macrs_into};
-/// use rust_decimal_macros::*;
-/// use rust_decimal::Decimal;
 ///
-/// let cost = dec!(10_000);
+/// let cost = 10_000.0;
 /// let rates = vec![
-///    dec!(0.20),
-///    dec!(0.32),
-///    dec!(0.1920),
-///    dec!(0.1152),
-///    dec!(0.1152),
-///    dec!(0.0576)
+///    0.20,
+///    0.32,
+///    0.1920,
+///    0.1152,
+///    0.1152,
+///    0.0576
 /// ];
 /// let life = rates.len() as u32;
 /// let mut schedule = vec![DepreciationPeriod::default(); life as usize];
 /// macrs_into(&mut schedule, cost, &rates);
 /// ```
-pub fn macrs_into(slice: &mut [DepreciationPeriod], cost: Decimal, rates: &[Decimal]) {
+pub fn macrs_into<T: FloatLike>(slice: &mut [DepreciationPeriod<T>], cost: T, rates: &[T]) {
     if slice.len() != rates.len() {
         panic!("Length of slice must be equal to the number of rates");
     }
@@ -411,98 +394,76 @@ pub fn macrs_into(slice: &mut [DepreciationPeriod], cost: Decimal, rates: &[Deci
     }
 }
 
-// TODO: Add tests for no_std environments, but if they pass in std, they should pass in no_std
 // since the underlying logic is the same. Just the allocation is different.
 #[cfg(test)]
 #[cfg(feature = "std")]
 mod tests {
     use super::*;
-    use rust_decimal_macros::dec;
+
     #[cfg(not(feature = "std"))]
     extern crate std;
-    #[cfg(not(feature = "std"))]
-    use std::prelude::v1::*;
     #[cfg(not(feature = "std"))]
     use std::{assert_eq, println, vec};
 
     #[test]
     fn test_macrs() {
-        let cost = dec!(10_000);
-        let rates = vec![
-            dec!(0.20),
-            dec!(0.32),
-            dec!(0.1920),
-            dec!(0.1152),
-            dec!(0.1152),
-            dec!(0.0576),
-        ];
-        const LIFE: u32 = 6;
-        let mut schedule: [DepreciationPeriod; LIFE as usize] = [DepreciationPeriod::default(); LIFE as usize];
+        let cost = 10_000.0;
+        let rates = vec![0.20, 0.32, 0.1920, 0.1152, 0.1152, 0.0576];
+        const LIFE: usize = 6;
+        let mut schedule: [DepreciationPeriod<f64>; LIFE] = [DepreciationPeriod::default(); LIFE];
         macrs_into(&mut schedule, cost, &rates);
         schedule.iter().for_each(|period| println!("{:?}", period));
         assert_eq!(schedule.len(), rates.len());
-        assert_eq!(schedule[0].depreciation_expense, dec!(2000));
-        assert_eq!(schedule[0].remaining_book_value, dec!(8000));
-        assert_eq!(schedule[5].depreciation_expense, dec!(576));
-        assert_eq!(schedule[5].remaining_book_value, dec!(0));
+        assert_eq!(schedule[0].depreciation_expense, 2000.0);
+        assert_eq!(schedule[0].remaining_book_value, 8000.0);
+        assert_eq!(schedule[5].depreciation_expense, 576.0);
+        assert_eq!(schedule[5].remaining_book_value, 0.0);
     }
 
     #[test]
     fn test_syd() {
         struct TestCase {
-            cost: Decimal,
-            salvage: Decimal,
+            cost: f64,
+            salvage: f64,
             life: u32,
-            round: Option<(u32, RoundingStrategy)>,
-            expected: Decimal,
+            round: Option<(u32, RoundingMode, f64)>,
+            expected: f64,
         }
 
         impl TestCase {
-            fn new(cost: f64, salvage: f64, life: u32, round: Option<(u32, RoundingStrategy)>, expected: f64) -> Self {
+            fn new(cost: f64, salvage: f64, life: u32, round: Option<(u32, RoundingMode)>, expected: f64) -> Self {
                 Self {
-                    cost: Decimal::from_f64(cost).unwrap(),
-                    salvage: Decimal::from_f64(salvage).unwrap(),
+                    cost,
+                    salvage,
                     life,
-                    round,
-                    expected: Decimal::from_f64(expected).unwrap(),
+                    round: round.map(|(dp, mode)| (dp, mode, 1e-5)),
+                    expected,
                 }
             }
         }
 
         let cases = [
             TestCase::new(10_000.00, 1_000.00, 5, None, 600.00),
-            TestCase::new(
-                9_000.00,
-                1_000.00,
-                5,
-                Some((2, RoundingStrategy::MidpointNearestEven)),
-                533.33,
-            ),
-            TestCase::new(
-                9_000.00,
-                1_500.00,
-                10,
-                Some((2, RoundingStrategy::MidpointNearestEven)),
-                136.36,
-            ),
+            TestCase::new(9_000.00, 1_000.00, 5, Some((2, RoundingMode::HalfToEven)), 533.33),
+            TestCase::new(9_000.00, 1_500.00, 10, Some((2, RoundingMode::HalfToEven)), 136.36),
         ];
         for case in &cases {
             let schedule = syd(case.cost, case.salvage, case.life, case.round);
             schedule.iter().for_each(|period| println!("{:?}", period));
             assert_eq!(schedule.len(), case.life as usize);
-            assert_eq!(schedule.last().unwrap().depreciation_expense, case.expected);
+            assert!((schedule.last().unwrap().depreciation_expense - case.expected).abs() < 1e-5);
         }
     }
 
     #[test]
     fn test_db() {
         struct TestCase {
-            cost: Decimal,
-            salvage: Decimal,
+            cost: f64,
+            salvage: f64,
             life: u32,
-            factor: Option<Decimal>,
-            round: Option<(u32, RoundingStrategy)>,
-            expected: Decimal,
+            factor: Option<f64>,
+            round: Option<(u32, RoundingMode, f64)>,
+            expected: f64,
         }
         impl TestCase {
             fn new(
@@ -510,16 +471,16 @@ mod tests {
                 salvage: f64,
                 life: u32,
                 factor: Option<f64>,
-                round: Option<(u32, RoundingStrategy)>,
+                round: Option<(u32, RoundingMode)>,
                 expected: f64,
             ) -> Self {
                 Self {
-                    cost: Decimal::from_f64(cost).unwrap(),
-                    salvage: Decimal::from_f64(salvage).unwrap(),
+                    cost,
+                    salvage,
                     life,
-                    factor: factor.map(Decimal::from_f64).unwrap_or(None),
-                    round,
-                    expected: Decimal::from_f64(expected).unwrap(),
+                    factor,
+                    round: round.map(|(dp, mode)| (dp, mode, 1e-5)),
+                    expected,
                 }
             }
         }
@@ -533,7 +494,7 @@ mod tests {
                 1_000.00,
                 10,
                 None,
-                Some((2, RoundingStrategy::MidpointNearestEven)),
+                Some((2, RoundingMode::HalfToEven)),
                 342.18,
             ),
         ];
@@ -547,13 +508,13 @@ mod tests {
 
     #[test]
     fn test_sln() {
-        let cost = dec!(10_000);
-        let salvage = dec!(1_000);
+        let cost = 10_000.0;
+        let salvage = 1_000.0;
         let life = 5;
         let schedule = sln(cost, salvage, life);
         schedule.iter().for_each(|period| println!("{:?}", period));
         assert_eq!(schedule.len(), 5);
-        assert_eq!(schedule[0].depreciation_expense, dec!(1800));
-        assert_eq!(schedule[0].remaining_book_value, dec!(8200));
+        assert_eq!(schedule[0].depreciation_expense, 1800.0);
+        assert_eq!(schedule[0].remaining_book_value, 8200.0);
     }
 }
