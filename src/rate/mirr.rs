@@ -41,7 +41,7 @@ pub fn mirr<T: FloatLike>(cash_flows: &[T], finance_rate: T, reinvest_rate: T) -
             npv_neg += pv(finance_rate, T::from_usize(i), T::zero(), Some(cf), None);
         } else {
             // Calculate the future value of positive cash flows
-            fv_pos += fv(reinvest_rate, T::from_usize(n - i), T::zero(), Some(cf), None);
+            fv_pos -= fv(reinvest_rate, T::from_usize(n - i), T::zero(), Some(cf), None);
         }
     }
     npv_neg = npv_neg.abs(); // Ensure npv_neg is positive for the calculation
@@ -108,7 +108,7 @@ pub fn xmirr<T: FloatLike>(flow_table: &[(T, i32)], finance_rate: T, reinvest_ra
                 None,
             );
         } else {
-            fv_pos += fv(
+            fv_pos -= fv(
                 reinvest_rate,
                 (n - T::from_i32(date)) / T::from_u16(365),
                 T::zero(),
