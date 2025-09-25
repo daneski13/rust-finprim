@@ -43,14 +43,15 @@ pub fn fv<T: FloatLike>(rate: T, nper: T, pmt: T, pv: Option<T>, due: Option<boo
     }
 
     let nth_power = (T::one() + rate).powf(nper);
-    let factor = (T::one() - nth_power) / rate;
+    let factor = (nth_power - T::one()) / rate;
     let pv_grown = pv * nth_power;
 
-    if due {
+    let fv = if due {
         pmt * factor * (T::one() + rate) + pv_grown
     } else {
         pmt * factor + pv_grown
-    }
+    };
+    -fv
 }
 
 #[cfg(test)]
@@ -119,6 +120,15 @@ mod tests {
                 10.0,
                 -100.0,
                 Some(1000.0),
+                None,
+                -371.10537,
+                "Initial investment should result in higher future value",
+            ),
+            TestCase::new(
+                0.05,
+                10.0,
+                -100.0,
+                Some(-1000.0),
                 None,
                 2886.68388,
                 "Initial investment should result in higher future value",
